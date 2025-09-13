@@ -177,9 +177,9 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
           Email{" "}
           <a
             className="font-medium text-primary hover:underline"
-            href="mailto:support@saas-starter.com"
+            href="mailto:support@factufly-pro.com"
           >
-            support@saas-starter.com
+            support@factufly-pro.com
           </a>{" "}
           for to contact our support team.
           <br />
