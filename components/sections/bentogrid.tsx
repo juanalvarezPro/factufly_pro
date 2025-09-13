@@ -318,25 +318,13 @@ export default function BentoGrid() {
                     <span className="block h-fit rounded-md border bg-muted/50 px-2 py-1 text-xs">
                       Glodie
                     </span>
-                    <div className="size-7 ring-4 ring-background">
-                      <Image
-                        width={100}
-                        height={100}
-                        className="size-full rounded-full border"
-                        src="https://randomuser.me/api/portraits/men/4.jpg"
-                        alt="fake-avatar"
-                      />
+                    <div className="size-7 ring-4 ring-background rounded-full bg-muted flex items-center justify-center text-xs">
+                      G
                     </div>
                   </div>
                   <div className="relative ml-[calc(50%-1rem)] flex items-center gap-2">
-                    <div className="size-8 ring-4 ring-background">
-                      <Image
-                        width={100}
-                        height={100}
-                        className="size-full rounded-full border"
-                        src="https://randomuser.me/api/portraits/men/6.jpg"
-                        alt="fake-avatar"
-                      />
+                    <div className="size-8 ring-4 ring-background rounded-full bg-muted flex items-center justify-center text-xs">
+                      M
                     </div>
                     <span className="block h-fit rounded-md border bg-muted/50 px-2 py-1 text-xs">
                       M. Irung
@@ -346,14 +334,8 @@ export default function BentoGrid() {
                     <span className="block h-fit rounded-md border bg-muted/50 px-2 py-1 text-xs">
                       B. Ng
                     </span>
-                    <div className="size-7 ring-4 ring-background">
-                      <Image
-                        width={100}
-                        height={100}
-                        className="size-full rounded-full border"
-                        src="https://randomuser.me/api/portraits/men/2.jpg"
-                        alt="fake-avatar"
-                      />
+                    <div className="size-7 ring-4 ring-background rounded-full bg-muted flex items-center justify-center text-xs">
+                      B
                     </div>
                   </div>
                 </div>
