@@ -39,10 +39,10 @@ export function constructMetadata({
     ],
     authors: [
       {
-        name: "mickasmt",
+        name: "juanalvarez",
       },
     ],
-    creator: "mickasmt",
+    creator: "juanalvarez",
     openGraph: {
       type: "website",
       locale: "en_US",
