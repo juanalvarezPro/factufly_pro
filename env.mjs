@@ -9,7 +9,7 @@ export const env = createEnv({
     AUTH_SECRET: z.string().min(1),
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
-    GITHUB_OAUTH_TOKEN: z.string().min(1),
+    GITHUB_OAUTH_TOKEN: z.string().optional(),
     DATABASE_URL: z.string().min(1),
     RESEND_API_KEY: z.string().min(1),
     EMAIL_FROM: z.string().min(1),
