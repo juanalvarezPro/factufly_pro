@@ -4,51 +4,73 @@ import { SidebarNavItem } from "types";
 
 export const sidebarLinks: SidebarNavItem[] = [
   {
-    title: "MENU",
+    title: "PRINCIPAL",
     items: [
-      {
-        href: "/admin",
-        icon: "laptop",
-        title: "Admin Panel",
-        authorizeOnly: UserRole.ADMIN,
+      { href: "/dashboard", icon: "dashboard", title: "Panel de Control" },
+      { href: "/dashboard/analytics", title: "Analíticas" },
+      { href: "/dashboard/reports", title: "Reportes" },
+    ],
+  },
+  {
+    title: "CATÁLOGO",
+    items: [
+      { href: "/dashboard/products", title: "Productos" },
+      { href: "/dashboard/products/create", icon: "add", title: "Crear Producto" },
+      { href: "/dashboard/combos", title: "Combos" },
+      { href: "/dashboard/combos/create", icon: "add", title: "Crear Combo" },
+      { href: "/dashboard/categories", title: "Categorías" },
+      { href: "/dashboard/categories/create", icon: "add", title: "Crear Categoría" },
+    ],
+  },
+  {
+    title: "INVENTARIO",
+    items: [
+      { href: "/dashboard/inventory", title: "Stock & Inventario" },
+      { href: "/dashboard/inventory/movements", title: "Movimientos" },
+      { href: "/dashboard/inventory/alerts", title: "Alertas de Stock" },
+    ],
+  },
+  {
+    title: "ADMINISTRACIÓN",
+    items: [
+      { 
+        href: "/dashboard/users", 
+        icon: "user", 
+        title: "Usuarios", 
+        authorizeOnly: UserRole.ADMIN 
       },
-      { href: "/dashboard", icon: "dashboard", title: "Dashboard" },
-      {
-        href: "/dashboard/billing",
-        icon: "billing",
-        title: "Billing",
-        authorizeOnly: UserRole.USER,
+      { 
+        href: "/dashboard/organizations", 
+        title: "Organizaciones", 
+        authorizeOnly: UserRole.ADMIN 
       },
-      { href: "/dashboard/charts", icon: "lineChart", title: "Charts" },
-      {
-        href: "/admin/orders",
-        icon: "package",
-        title: "Orders",
-        badge: 2,
-        authorizeOnly: UserRole.ADMIN,
-      },
-      {
-        href: "#/dashboard/posts",
-        icon: "post",
-        title: "User Posts",
-        authorizeOnly: UserRole.USER,
-        disabled: true,
+      { 
+        href: "/dashboard/permissions", 
+        title: "Permisos", 
+        authorizeOnly: UserRole.ADMIN 
       },
     ],
   },
   {
-    title: "OPTIONS",
+    title: "CONFIGURACIÓN",
     items: [
-      { href: "/dashboard/settings", icon: "settings", title: "Settings" },
-      { href: "/", icon: "home", title: "Homepage" },
-      { href: "/docs", icon: "bookOpen", title: "Documentation" },
+      { href: "/dashboard/settings", icon: "settings", title: "Configuración" },
+      { href: "/dashboard/billing", title: "Facturación" },
+      { href: "/dashboard/integrations", title: "Integraciones" },
       {
-        href: "#",
-        icon: "messages",
-        title: "Support",
-        authorizeOnly: UserRole.USER,
-        disabled: true,
+        href: "/admin",
+        icon: "laptop",
+        title: "Panel Admin",
+        authorizeOnly: UserRole.ADMIN,
       },
+    ],
+  },
+  {
+    title: "AYUDA",
+    items: [
+      { href: "/", icon: "home", title: "Página Principal" },
+      { href: "/docs", icon: "bookOpen", title: "Documentación" },
+      { href: "/dashboard/support",  title: "Soporte" },
     ],
   },
 ];
