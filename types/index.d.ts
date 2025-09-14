@@ -3,6 +3,9 @@ import type { Icon } from "lucide-react";
 
 import { Icons } from "@/components/shared/icons";
 
+// Export database types
+export * from "./database";
+
 export type SiteConfig = {
   name: string;
   description: string;
