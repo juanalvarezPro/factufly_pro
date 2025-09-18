@@ -14,20 +14,7 @@ export const sidebarLinks: SidebarNavItem[] = [
   {
     title: "CATÁLOGO",
     items: [
-      { href: "/dashboard/products", title: "Productos" },
-      { href: "/dashboard/products/create", icon: "add", title: "Crear Producto" },
-      { href: "/dashboard/combos", title: "Combos" },
-      { href: "/dashboard/combos/create", icon: "add", title: "Crear Combo" },
-      { href: "/dashboard/categories", title: "Categorías" },
-      { href: "/dashboard/categories/create", icon: "add", title: "Crear Categoría" },
-    ],
-  },
-  {
-    title: "INVENTARIO",
-    items: [
-      { href: "/dashboard/inventory", title: "Stock & Inventario" },
-      { href: "/dashboard/inventory/movements", title: "Movimientos" },
-      { href: "/dashboard/inventory/alerts", title: "Alertas de Stock" },
+      { href: "/dashboard/categories", icon: "listCheck", title: "Categorías" },
     ],
   },
   {
