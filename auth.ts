@@ -5,6 +5,7 @@ import NextAuth, { type DefaultSession } from "next-auth";
 
 import { prisma } from "@/lib/db";
 import { getUserById } from "@/lib/user";
+import { organizationService } from "@/lib/services/organization.service";
 
 // More info: https://authjs.dev/getting-started/typescript#module-augmentation
 declare module "next-auth" {
@@ -24,6 +25,19 @@ export const {
   pages: {
     signIn: "/login",
     // error: "/auth/error",
+  },
+  events: {
+    async createUser({ user }) {
+      // Create a default organization for new users
+      if (user.id && user.email) {
+        try {
+          await organizationService.createDefaultOrganization(user.id, user.email);
+        } catch (error) {
+          console.error("Failed to create default organization for user:", user.id, error);
+          // Don't throw error to avoid breaking user creation
+        }
+      }
+    },
   },
   callbacks: {
     async session({ token, session }) {
