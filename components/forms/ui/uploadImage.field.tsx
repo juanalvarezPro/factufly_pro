@@ -12,6 +12,10 @@ interface UploadImageFieldProps {
 }
 
 export function UploadImageField({ form, organizationId, label, entityType }: UploadImageFieldProps) {
+    // Get the category name from the form to use as custom filename
+    const categoryName = form.watch("name");
+    const isDisabled = !categoryName || categoryName.trim().length === 0;
+    
     return (
         <FormField
           control={form.control}
@@ -25,15 +29,16 @@ export function UploadImageField({ form, organizationId, label, entityType }: Up
                   entityType={entityType}
                   maxFiles={1}
                   maxSize={5}
-                  returnKey={true}
+                  disabled={isDisabled}
+                  customFileName={categoryName ? categoryName : undefined}
                   value={field.value ? [field.value] : []}
-                  onChange={(keys) => {
-                    const key = keys[0] || "";
-                    field.onChange(key);
+                  onChange={(urls) => {
+                    const url = urls[0] || "";
+                    field.onChange(url);
                   }}
-                  onUploadComplete={(keys) => {
-                    const key = keys[0] || "";
-                    field.onChange(key);
+                  onUploadComplete={(urls) => {
+                    const url = urls[0] || "";
+                    field.onChange(url);
                   }}
                   onError={(error) => {
                     console.error("Error uploading image:", error);
@@ -41,7 +46,10 @@ export function UploadImageField({ form, organizationId, label, entityType }: Up
                 />
               </FormControl>
               <FormDescription>
-                Sube una imagen para la categoría (máximo 5MB)
+                {isDisabled 
+                  ? "Primero escribe el nombre de la categoría para poder subir una imagen"
+                  : "Sube una imagen para la categoría (máximo 5MB)"
+                }
               </FormDescription>
               <FormMessage />
             </FormItem>
