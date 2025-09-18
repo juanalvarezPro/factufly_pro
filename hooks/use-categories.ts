@@ -53,11 +53,14 @@ export function useCategories(organizationId: string) {
     queryKey: ["categories", organizationId],
     queryFn: async (): Promise<ProductCategoryWithRelations[]> => {
       const response = await fetch(`/api/organizations/${organizationId}/categories`);
+      
       if (!response.ok) {
-        throw new Error("Error al cargar las categorías");
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(`Error ${response.status}: ${errorData.error?.message || errorData.error || "Error al cargar las categorías"}`);
       }
+      
       const data = await response.json();
-      return data.categories || [];
+      return data.data || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
