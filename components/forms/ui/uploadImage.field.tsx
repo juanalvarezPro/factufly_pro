@@ -2,6 +2,7 @@
 import { FormControl, FormDescription, FormField, FormLabel, FormItem, FormMessage } from "@/components/ui/form";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { UseFormReturn } from "react-hook-form";
+import { getPublicUrl } from "@/lib/utils/r2-client";
 
 interface UploadImageFieldProps {
     form: UseFormReturn<any>;
@@ -31,13 +32,15 @@ export function UploadImageField({ form, organizationId, label, entityType }: Up
                   maxSize={5}
                   disabled={isDisabled}
                   customFileName={categoryName ? categoryName : undefined}
-                  value={field.value ? [field.value] : []}
+                  value={field.value ? [getPublicUrl(field.value)] : []}
                   onChange={(urls) => {
                     const url = urls[0] || "";
+                    // ImageUploader now returns keys, so store directly
                     field.onChange(url);
                   }}
                   onUploadComplete={(urls) => {
                     const url = urls[0] || "";
+                    // ImageUploader now returns keys, so store directly
                     field.onChange(url);
                   }}
                   onError={(error) => {

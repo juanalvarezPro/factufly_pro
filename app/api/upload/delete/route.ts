@@ -8,7 +8,7 @@ import { organizationService } from "@/lib/services/organization.service";
 // Validation schema for delete request
 const deleteSchema = z.object({
   organizationId: z.string().cuid(),
-  urls: z.array(z.string().url()).min(1, "At least one URL is required").max(50, "Too many URLs"),
+  urls: z.array(z.string()).min(1, "At least one URL/key is required").max(50, "Too many URLs/keys"),
 });
 
 export async function DELETE(request: NextRequest) {
@@ -43,20 +43,37 @@ export async function DELETE(request: NextRequest) {
     const keys: string[] = [];
     const invalidUrls: string[] = [];
 
-    for (const url of validatedData.urls) {
-      const key = extractKeyFromUrl(url);
+    for (const urlOrKey of validatedData.urls) {
+      console.log(`🗑️ Processing delete request for: ${urlOrKey}`);
+      console.log(`🗑️ Organization slug: ${organization.slug}`);
+      
+      let key: string | null = null;
+      
+      // Check if it's a URL or a key
+      if (urlOrKey.startsWith('http://') || urlOrKey.startsWith('https://')) {
+        // It's a URL, extract the key
+        key = extractKeyFromUrl(urlOrKey);
+        console.log(`🗑️ Extracted key from URL: ${key}`);
+      } else {
+        // It's already a key
+        key = urlOrKey;
+        console.log(`🗑️ Using key directly: ${key}`);
+      }
       
       if (!key) {
-        invalidUrls.push(url);
+        console.log(`❌ No key found for: ${urlOrKey}`);
+        invalidUrls.push(urlOrKey);
         continue;
       }
 
       // Verify the key belongs to this organization (starts with org slug)
       if (!key.startsWith(`${organization.slug}/`)) {
-        invalidUrls.push(url);
+        console.log(`❌ Key ${key} does not start with org slug ${organization.slug}/`);
+        invalidUrls.push(urlOrKey);
         continue;
       }
 
+      console.log(`✅ Key ${key} is valid for organization`);
       keys.push(key);
     }
 

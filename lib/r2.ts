@@ -135,12 +135,13 @@ export function generateR2Key(options: R2UploadOptions): string {
  * For unified server/client usage, use the function from lib/utils/r2-client.ts
  */
 export function getPublicUrl(key: string): string {
+  // Only work with R2_PUBLIC_URL
   if (env.R2_PUBLIC_URL) {
     return `${env.R2_PUBLIC_URL}/${key}`;
   }
   
-  // Fallback to R2 public URL format
-  return `https://${env.R2_BUCKET}.${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`;
+  // If no R2_PUBLIC_URL is configured, return the key as is
+  return key;
 }
 
 /**
@@ -212,7 +213,7 @@ export async function uploadToR2(
       ContentType: contentType,
       Metadata: uploadMetadata,
       CacheControl: 'public, max-age=31536000', // 1 year cache
-      ...(isPublic && { ACL: 'public-read' }),
+
     });
 
     await r2Client.send(command);
@@ -320,19 +321,12 @@ export async function generatePresignedDownloadUrl(
  */
 export function extractKeyFromUrl(url: string): string | null {
   try {
-    const urlObj = new URL(url);
-    
-    // Handle different R2 URL formats
+    // Only work with R2_PUBLIC_URL
     if (env.R2_PUBLIC_URL && url.startsWith(env.R2_PUBLIC_URL)) {
       return url.replace(`${env.R2_PUBLIC_URL}/`, '');
     }
     
-    // Handle default R2 URL format
-    const r2Domain = `${env.R2_BUCKET}.${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
-    if (url.includes(r2Domain)) {
-      return urlObj.pathname.substring(1); // Remove leading slash
-    }
-    
+    // If not using R2_PUBLIC_URL, return null
     return null;
   } catch {
     return null;

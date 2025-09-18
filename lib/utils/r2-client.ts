@@ -9,23 +9,13 @@ export function getPublicUrl(key: string): string {
     return key;
   }
   
-  // If it's an R2 key, construct the public URL using endpoint
-  const r2Endpoint = process.env.NEXT_PUBLIC_R2_ENDPOINT;
-  console.log("r2Endpoint", r2Endpoint);
-   
-  if (r2Endpoint) {
-    return `${r2Endpoint}/${key}`;
+  // Only work with NEXT_PUBLIC_R2_PUBLIC_URL
+  const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
+  if (r2PublicUrl) {
+    return `${r2PublicUrl}/${key}`;
   }
   
-  // Fallback: construct R2 URL from bucket and account ID
-  const r2Bucket = process.env.NEXT_PUBLIC_R2_BUCKET;
-  const r2AccountId = process.env.NEXT_PUBLIC_R2_ACCOUNT_ID;
-  
-  if (r2Bucket && r2AccountId) {
-    return `https://${r2Bucket}.${r2AccountId}.r2.cloudflarestorage.com/${key}`;
-  }
-  
-  // Last resort: return the key as is
+  // If no R2_PUBLIC_URL is configured, return the key as is
   return key;
 }
 
@@ -39,14 +29,14 @@ export function extractR2Key(url: string): string {
     return url;
   }
   
-  try {
-    const urlObj = new URL(url);
-    // Remove leading slash from pathname
-    return urlObj.pathname.substring(1);
-  } catch {
-    // If URL parsing fails, return the original string
-    return url;
+  // Only work with NEXT_PUBLIC_R2_PUBLIC_URL
+  const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
+  if (r2PublicUrl && url.startsWith(r2PublicUrl)) {
+    return url.replace(`${r2PublicUrl}/`, '');
   }
+  
+  // If not using R2_PUBLIC_URL, return the original string
+  return url;
 }
 
 /**

@@ -116,7 +116,12 @@ export function useImageUpload(options: UploadOptions) {
           }
 
           const result = await response.json();
-          results.push(result.data);
+          // Use only the key, not the full URL
+          results.push({
+            ...result.data,
+            url: result.data.key, // Store key instead of full URL
+            publicUrl: result.data.key, // Store key instead of full URL
+          });
 
           // Complete progress
           setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
@@ -200,8 +205,8 @@ export function useImageUpload(options: UploadOptions) {
 
     return {
       key,
-      url: publicUrl,
-      publicUrl,
+      url: key, // Store key instead of full URL
+      publicUrl: key, // Store key instead of full URL
       size: file.size,
       contentType: file.type,
       organizationSlug: key.split('/')[0], // Extract from key

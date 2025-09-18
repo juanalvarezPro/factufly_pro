@@ -33,6 +33,7 @@ export const env = createEnv({
     NEXT_PUBLIC_R2_ENDPOINT: z.string().url().optional(),
     NEXT_PUBLIC_R2_BUCKET: z.string().min(1).optional(),
     NEXT_PUBLIC_R2_ACCOUNT_ID: z.string().min(1).optional(),
+    NEXT_PUBLIC_R2_PUBLIC_URL: z.string().url().optional(),
   },
   runtimeEnv: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
@@ -59,6 +60,7 @@ export const env = createEnv({
     NEXT_PUBLIC_R2_ENDPOINT: process.env.NEXT_PUBLIC_R2_ENDPOINT,
     NEXT_PUBLIC_R2_BUCKET: process.env.NEXT_PUBLIC_R2_BUCKET,
     NEXT_PUBLIC_R2_ACCOUNT_ID: process.env.NEXT_PUBLIC_R2_ACCOUNT_ID,
+    NEXT_PUBLIC_R2_PUBLIC_URL: process.env.NEXT_PUBLIC_R2_PUBLIC_URL,
     // Cloudflare R2 (server-side)
     R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
     R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
