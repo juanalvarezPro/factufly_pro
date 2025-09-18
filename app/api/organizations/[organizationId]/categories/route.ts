@@ -94,8 +94,10 @@ export const POST = withAuthorization({
     const {
       name,
       description,
-      parentId,
+      imagenAlt,
+      summaryCardId,
       status = "active",
+      isCombo = false,
     } = body;
 
     // Validate required fields
@@ -111,7 +113,6 @@ export const POST = withAuthorization({
       where: {
         organizationId,
         name,
-        ...(parentId && { parentId }),
       },
     });
 
@@ -122,22 +123,7 @@ export const POST = withAuthorization({
       );
     }
 
-    // Validate parent exists if provided
-    if (parentId) {
-      const parentCategory = await prisma.productCategory.findFirst({
-        where: {
-          id: parentId,
-          organizationId,
-        },
-      });
-
-      if (!parentCategory) {
-        return NextResponse.json(
-          { error: "La categoría padre no existe" },
-          { status: 400 }
-        );
-      }
-    }
+    // No parent validation needed since we removed parentId
 
     // Create category
     const category = await prisma.productCategory.create({
@@ -145,9 +131,10 @@ export const POST = withAuthorization({
         organizationId,
         name,
         description,
-        ...(parentId ? { parentId } : {}),
+        imagenAlt,
+        summaryCardId,
         active: status === "active",
-        isCombo: false,
+        isCombo,
         uuid: uuid(), // @ts-ignore
       },  
       include: {
