@@ -11,10 +11,11 @@ interface propsForm {
     path: string;
     label: string;
     itemName: any;
+    cta: string;
 }
 
 
-export function MyForm({ children, form, onSubmit, router, itemName, path, label }: propsForm) {
+export function MyForm({ children, form, onSubmit, router, itemName, path, label, cta }: propsForm) {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -33,7 +34,7 @@ export function MyForm({ children, form, onSubmit, router, itemName, path, label
                         {itemName.isPending && (
                             <Icons.spinner className="mr-2 size-4 animate-spin" />
                         )}
-                        {itemName.isPending ? "Creando..." : "Crear " + label}
+                        {itemName.isPending ? "Creando..." : cta + " " + label}
                     </Button>
                 </div>
             </form>
