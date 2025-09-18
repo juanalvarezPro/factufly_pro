@@ -36,6 +36,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<OrganizationRole, Permission[]> = 
     { action: "READ", resource: "product" },
     { action: "UPDATE", resource: "product" },
     { action: "DELETE", resource: "product" },
+    // Categories
+    { action: "CREATE", resource: "category" },
+    { action: "READ", resource: "category" },
+    { action: "UPDATE", resource: "category" },
+    { action: "DELETE", resource: "category" },
     // Combos
     { action: "CREATE", resource: "combo" },
     { action: "READ", resource: "combo" },
@@ -60,6 +65,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<OrganizationRole, Permission[]> = 
     { action: "READ", resource: "product" },
     { action: "UPDATE", resource: "product" },
     { action: "DELETE", resource: "product" },
+    // Categories
+    { action: "CREATE", resource: "category" },
+    { action: "READ", resource: "category" },
+    { action: "UPDATE", resource: "category" },
+    { action: "DELETE", resource: "category" },
     // Combos
     { action: "CREATE", resource: "combo" },
     { action: "READ", resource: "combo" },
@@ -80,6 +90,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<OrganizationRole, Permission[]> = 
     { action: "CREATE", resource: "product" },
     { action: "READ", resource: "product" },
     { action: "UPDATE", resource: "product" },
+    // Categories
+    { action: "CREATE", resource: "category" },
+    { action: "READ", resource: "category" },
+    { action: "UPDATE", resource: "category" },
     // Combos
     { action: "CREATE", resource: "combo" },
     { action: "READ", resource: "combo" },
@@ -95,6 +109,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<OrganizationRole, Permission[]> = 
     { action: "READ", resource: "organization" },
     // Products (read only)
     { action: "READ", resource: "product" },
+    // Categories (read only)
+    { action: "READ", resource: "category" },
     // Combos (read only)
     { action: "READ", resource: "combo" },
     // Stock (read only)
@@ -116,16 +132,16 @@ export class AuthorizationService {
     resourceId?: string,
     conditions?: Record<string, any>
   ): Promise<boolean> {
-    try {
-      // Get user's organization membership
-      const membership = await organizationService.getMembership(userId, organizationId);
-      
-      if (!membership) {
-        return false;
-      }
-      
-      // Get role permissions
-      const rolePermissions = DEFAULT_ROLE_PERMISSIONS[membership.role] || [];
+      try {
+        // Get user's organization membership
+        const membership = await organizationService.getUserMembership(userId, organizationId);
+        
+        if (!membership) {
+          return false;
+        }
+        
+        // Get role permissions
+        const rolePermissions = DEFAULT_ROLE_PERMISSIONS[membership.role] || [];
       
       // Check if user has the required permission
       const hasPermission = rolePermissions.some(permission => 
@@ -191,7 +207,7 @@ export class AuthorizationService {
     organizationId: string
   ): Promise<Permission[]> {
     try {
-      const membership = await organizationService.getMembership(userId, organizationId);
+      const membership = await organizationService.getUserMembership(userId, organizationId);
       
       if (!membership) {
         return [];
