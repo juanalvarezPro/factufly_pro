@@ -48,7 +48,7 @@ interface UseCategoriesOptions {
 
 // ===== MAIN HOOK =====
 
-export function useCategories(organizationId: string) {
+function useCategories(organizationId: string) {
   return useQuery({
     queryKey: ["categories", organizationId],
     queryFn: async (): Promise<ProductCategoryWithRelations[]> => {
@@ -303,8 +303,8 @@ function useCategoryTree(organizationId: string) {
 
 // ===== EXPORT ALL =====
 
-export default useCategories;
 export {
+  useCategories,
   useCategoriesList,
   useCreateCategory,
   useUpdateCategory,
