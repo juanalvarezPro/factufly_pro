@@ -1,18 +1,42 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useDropzone } from "react-dropzone";
-import { Upload, X, Image as ImageIcon, Loader2, AlertCircle } from "lucide-react";
+import { X, Image as ImageIcon, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { UploadArea } from "./upload-area";
+import { FileList } from "./file-list";
+import { useImageUpload } from "@/hooks/use-image-upload";
+
+// Helper function to convert R2 key to public URL
+function getImageUrl(keyOrUrl: string): string {
+  // If it's already a full URL, return as is
+  if (keyOrUrl.startsWith('http://') || keyOrUrl.startsWith('https://')) {
+    return keyOrUrl;
+  }
+  
+  // If it's an R2 key, construct the public URL
+  // Use the actual R2 public URL from environment or construct it
+  const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
+  
+  if (r2PublicUrl) {
+    return `${r2PublicUrl}/${keyOrUrl}`;
+  }
+  
+  // Fallback: construct R2 URL from bucket and account ID
+  const r2Bucket = process.env.NEXT_PUBLIC_R2_BUCKET;
+  const r2AccountId = process.env.NEXT_PUBLIC_R2_ACCOUNT_ID;
+  
+  if (r2Bucket && r2AccountId) {
+    return `https://${r2Bucket}.${r2AccountId}.r2.cloudflarestorage.com/${keyOrUrl}`;
+  }
+  
+  // Last resort: return the key as is (might work if it's already a URL)
+  return keyOrUrl;
+}
 
 interface ImageUploaderProps {
   organizationId: string;
@@ -27,14 +51,15 @@ interface ImageUploaderProps {
   disabled?: boolean;
   value?: string[];
   onChange?: (urls: string[]) => void;
-  returnKey?: boolean; // If true, returns R2 key instead of URL
+  customFileName?: string; // Custom filename to use
+  useOriginalName?: boolean; // Use original filename without UUID
 }
 
 interface UploadedFile {
   file: File;
   preview: string;
   status: "pending" | "uploading" | "success" | "error";
-  progress: number;
+  progress?: number;
   url?: string;
   error?: string;
 }
@@ -52,180 +77,99 @@ export function ImageUploader({
   disabled = false,
   value = [],
   onChange,
-  returnKey = false,
+  customFileName,
+  useOriginalName = false,
 }: ImageUploaderProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-
-  const validateFile = useCallback((file: File): string | null => {
-    if (!acceptedFileTypes.includes(file.type)) {
-      return `Tipo de archivo no válido. Formatos aceptados: ${acceptedFileTypes.join(", ")}`;
-    }
-    
-    if (file.size > maxSize * 1024 * 1024) {
-      return `El archivo es demasiado grande. Tamaño máximo: ${maxSize}MB`;
-    }
-    
-    return null;
-  }, [acceptedFileTypes, maxSize]);
+  
+  // Use the custom hook for upload logic
+  const { isUploading, uploadBatch, deleteImages } = useImageUpload({
+    organizationId,
+    entityType,
+    entityId,
+    maxFiles,
+    maxSizeBytes: maxSize * 1024 * 1024,
+    allowedTypes: acceptedFileTypes,
+    customFileName,
+    useOriginalName,
+  });
 
   const handleFileUpload = useCallback(async (files: File[]) => {
     if (disabled) return;
     
-    const validFiles: UploadedFile[] = [];
-    const errors: string[] = [];
-
-    // Validate files
-    files.forEach((file) => {
-      const error = validateFile(file);
-      if (error) {
-        errors.push(`${file.name}: ${error}`);
-      } else {
-        validFiles.push({
-          file,
-          preview: URL.createObjectURL(file),
-          status: "pending",
-          progress: 0,
-        });
-      }
-    });
-
-    if (errors.length > 0) {
-      onError?.(errors.join("\n"));
-      return;
-    }
-
     // Check max files limit
-    const totalFiles = uploadedFiles.length + validFiles.length + value.length;
+    const currentFiles = value.length;
+    const newFiles = files.length;
+    const totalFiles = currentFiles + newFiles;
+    
     if (totalFiles > maxFiles) {
-      onError?.(`Máximo ${maxFiles} archivos permitidos`);
+      onError?.(`Máximo ${maxFiles} archivos permitidos. Ya tienes ${currentFiles} archivo(s) subido(s).`);
       return;
     }
 
-    setUploadedFiles((prev) => [...prev, ...validFiles]);
-    setUploading(true);
+    // Create uploaded files for tracking
+    const newUploadedFiles: UploadedFile[] = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      status: "pending" as const,
+      progress: 0,
+    }));
+
+    setUploadedFiles((prev) => [...prev, ...newUploadedFiles]);
 
     try {
-      const uploadPromises = validFiles.map(async (uploadFile, index) => {
-        const currentIndex = uploadedFiles.length + index;
-        
-        // Update status to uploading
-        setUploadedFiles((prev) =>
-          prev.map((f, i) =>
-            i === currentIndex ? { ...f, status: "uploading" as const } : f
-          )
-        );
-
-        try {
-          // Create FormData for upload
-          const formData = new FormData();
-          formData.append("file", uploadFile.file);
-          formData.append("organizationId", organizationId);
-          formData.append("entityType", entityType);
-          if (entityId) {
-            formData.append("entityId", entityId);
-          }
-
-          // Simulate upload progress
-          const progressInterval = setInterval(() => {
-            setUploadedFiles((prev) =>
-              prev.map((f, i) => {
-                if (i === currentIndex && f.progress < 90) {
-                  return { ...f, progress: f.progress + 10 };
-                }
-                return f;
-              })
-            );
-          }, 200);
-
-          // Upload to R2 via our API endpoint
-          const response = await fetch("/api/upload/images", {
-            method: "POST",
-            body: formData,
-          });
-
-          clearInterval(progressInterval);
-
-          if (!response.ok) {
-            throw new Error(`Upload failed: ${response.statusText}`);
-          }
-
-          const result = await response.json();
-          
-          // Determine what to return based on returnKey prop
-          const returnValue = returnKey ? result.data?.key : result.data?.url;
-          
-          // Update file with success status
-          setUploadedFiles((prev) =>
-            prev.map((f, i) =>
-              i === currentIndex
-                ? {
-                    ...f,
-                    status: "success" as const,
-                    progress: 100,
-                    url: returnValue,
-                  }
-                : f
-            )
-          );
-
-          return returnValue;
-        } catch (error) {
-          // Update file with error status
-          setUploadedFiles((prev) =>
-            prev.map((f, i) =>
-              i === currentIndex
-                ? {
-                    ...f,
-                    status: "error" as const,
-                    error: error instanceof Error ? error.message : "Error de subida",
-                  }
-                : f
-            )
-          );
-          throw error;
-        }
-      });
-
-      const uploadedUrls = await Promise.allSettled(uploadPromises);
-      const successfulUrls = uploadedUrls
-        .filter((result): result is PromiseFulfilledResult<string> => result.status === "fulfilled")
-        .map((result) => result.value);
-
-      if (successfulUrls.length > 0) {
+      // Use the hook's uploadBatch method
+      const results = await uploadBatch(files);
+      
+      if (results.length > 0) {
+        const successfulUrls = results.map(result => result.url);
         const newUrls = [...value, ...successfulUrls];
         onChange?.(newUrls);
         onUploadComplete?.(successfulUrls);
-      }
-
-      const failedUploads = uploadedUrls.filter((result) => result.status === "rejected");
-      if (failedUploads.length > 0) {
-        onError?.(`${failedUploads.length} archivos no se pudieron subir`);
+        
+        // Update uploaded files status
+        setUploadedFiles((prev) => 
+          prev.map((f, i) => {
+            const resultIndex = i - (prev.length - newUploadedFiles.length);
+            if (resultIndex >= 0 && resultIndex < results.length) {
+              return {
+                ...f,
+                status: "success" as const,
+                progress: 100,
+                url: results[resultIndex].url,
+              };
+            }
+            return f;
+          })
+        );
       }
     } catch (error) {
       console.error("Upload error:", error);
       onError?.("Error durante la subida de archivos");
-    } finally {
-      setUploading(false);
+      
+      // Update uploaded files status to error
+      setUploadedFiles((prev) => 
+        prev.map((f, i) => {
+          const isNewFile = i >= prev.length - newUploadedFiles.length;
+          if (isNewFile) {
+            return {
+              ...f,
+              status: "error" as const,
+              error: error instanceof Error ? error.message : "Error de subida",
+            };
+          }
+          return f;
+        })
+      );
     }
-  }, [disabled, maxFiles, uploadedFiles, value, organizationId, entityType, entityId, onChange, onUploadComplete, onError, returnKey, validateFile]);
+  }, [disabled, maxFiles, value, onChange, onUploadComplete, onError, uploadBatch]);
 
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      handleFileUpload(acceptedFiles);
+  const handleFilesSelected = useCallback(
+    (files: File[]) => {
+      handleFileUpload(files);
     },
     [handleFileUpload]
   );
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: acceptedFileTypes.reduce((acc, type) => ({ ...acc, [type]: [] }), {}),
-    maxFiles,
-    disabled,
-    onDragEnter: () => setDragActive(true),
-    onDragLeave: () => setDragActive(false),
-  });
 
   const removeFile = (index: number) => {
     const updatedFiles = uploadedFiles.filter((_, i) => i !== index);
@@ -235,33 +179,22 @@ export function ImageUploader({
   const removeUploadedImage = async (index: number) => {
     const urlToDelete = value[index];
     
+    // Remove from local state immediately for better UX
+    const newUrls = value.filter((_, i) => i !== index);
+    onChange?.(newUrls);
+    
+    // Also remove from uploadedFiles if it exists there
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+    
     if (urlToDelete) {
       try {
-        // Delete from R2
-        const response = await fetch("/api/upload/delete", {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            organizationId,
-            urls: [urlToDelete],
-          }),
-        });
-
-        if (!response.ok) {
-          console.error("Failed to delete from R2");
-          onError?.("Error al eliminar la imagen del servidor");
-        }
+        // Use the hook's deleteImages method
+        await deleteImages([urlToDelete]);
       } catch (error) {
         console.error("Delete error:", error);
         onError?.("Error al eliminar la imagen");
       }
     }
-    
-    // Remove from local state regardless of R2 deletion success
-    const newUrls = value.filter((_, i) => i !== index);
-    onChange?.(newUrls);
   };
 
   const retryUpload = (index: number) => {
@@ -273,97 +206,25 @@ export function ImageUploader({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Dropzone */}
-      <Card
-        {...getRootProps()}
-        className={cn(
-          "cursor-pointer border-2 border-dashed transition-colors",
-          dragActive || isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25",
-          disabled && "cursor-not-allowed opacity-50"
-        )}
-      >
-        <CardContent className="flex flex-col items-center justify-center py-8">
-          <input {...getInputProps()} />
-          <Upload className="mb-2 size-8 text-muted-foreground" />
-          <p className="text-center text-sm text-muted-foreground">
-            <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {acceptedFileTypes.join(", ")} hasta {maxSize}MB
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Máximo {maxFiles} archivos
-          </p>
-        </CardContent>
-      </Card>
+      {/* Upload Area */}
+      <UploadArea
+        onFilesSelected={handleFilesSelected}
+        disabled={disabled}
+        maxFiles={maxFiles}
+        maxSize={maxSize}
+        acceptedFileTypes={acceptedFileTypes}
+      />
 
       {/* Upload Progress */}
       {uploadedFiles.length > 0 && (
         <div className="space-y-2">
           <Label>Subiendo archivos</Label>
-          {uploadedFiles.map((uploadFile, index) => (
-            <div key={index} className="flex items-center space-x-2 rounded-md border p-2">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded bg-muted">
-                {uploadFile.status === "uploading" ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : uploadFile.status === "success" ? (
-                  <ImageIcon className="size-4 text-green-600" />
-                ) : uploadFile.status === "error" ? (
-                  <AlertCircle className="size-4 text-red-600" />
-                ) : (
-                  <ImageIcon className="size-4" />
-                )}
-              </div>
-              
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{uploadFile.file.name}</p>
-                {uploadFile.status === "uploading" && (
-                  <Progress value={uploadFile.progress} className="h-1" />
-                )}
-                {uploadFile.status === "error" && uploadFile.error && (
-                  <p className="text-xs text-red-600">{uploadFile.error}</p>
-                )}
-              </div>
-
-              <Badge
-                variant={
-                  uploadFile.status === "success"
-                    ? "default"
-                    : uploadFile.status === "error"
-                    ? "destructive"
-                    : "secondary"
-                }
-              >
-                {uploadFile.status === "pending"
-                  ? "Pendiente"
-                  : uploadFile.status === "uploading"
-                  ? "Subiendo"
-                  : uploadFile.status === "success"
-                  ? "Completado"
-                  : "Error"}
-              </Badge>
-
-              <div className="shrink-0">
-                {uploadFile.status === "error" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => retryUpload(index)}
-                  >
-                    Reintentar
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => removeFile(index)}
-                  >
-                    <X className="size-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
+          <FileList
+            files={uploadedFiles}
+            onRemove={removeFile}
+            onRetry={retryUpload}
+            showPreview={true}
+          />
         </div>
       )}
 
@@ -371,36 +232,38 @@ export function ImageUploader({
       {value.length > 0 && (
         <div className="space-y-2">
           <Label>Imágenes subidas</Label>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {value.map((url, index) => (
-              <Card key={index} className="group relative">
-                <CardContent className="p-2">
-                  <div className="relative aspect-square">
-                    <Image
-                      src={url}
-                      alt={`Imagen ${index + 1}`}
-                      className="size-full rounded-md object-cover"
-                      width={100}
-                      height={100}
-                    />
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                        className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => removeUploadedImage(index)}
-                    >
-                      <X className="size-3" />
-                    </Button>
+          <div className="space-y-2">
+            {value.map((url, index) => {
+              // Extract filename from the R2 key
+              const filename = url.split('/').pop() || `Imagen ${index + 1}`;
+              return (
+                <div key={index} className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                  <div className="flex items-center space-x-2">
+                    <ImageIcon className="size-4 text-green-600" />
+                    <span className="text-sm font-medium">Imagen subida: {filename}</span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeUploadedImage(index);
+                    }}
+                  >
+                    <X className="size-3 mr-1" />
+                    Eliminar
+                  </Button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* Upload Status */}
-      {uploading && (
+      {isUploading && (
         <Alert>
           <Loader2 className="size-4 animate-spin" />
           <AlertDescription>

@@ -10,6 +10,8 @@ export interface UploadOptions {
   maxFiles?: number;
   maxSizeBytes?: number;
   allowedTypes?: string[];
+  customFileName?: string;
+  useOriginalName?: boolean;
 }
 
 export interface UploadResult {
@@ -80,6 +82,12 @@ export function useImageUpload(options: UploadOptions) {
         formData.append("entityType", options.entityType);
         if (options.entityId) {
           formData.append("entityId", options.entityId);
+        }
+        if (options.customFileName) {
+          formData.append("customFileName", options.customFileName);
+        }
+        if (options.useOriginalName) {
+          formData.append("useOriginalName", "true");
         }
 
         // Upload progress tracking

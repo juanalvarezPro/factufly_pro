@@ -1,7 +1,7 @@
 import "server-only";
 
 import { BaseService, ValidationError, NotFoundError } from "./base.service";
-import { uploadToR2, deleteFromR2, extractKeyFromUrl, R2UploadOptions, UploadResult } from "@/lib/r2";
+import { uploadToR2, deleteFromR2, extractKeyFromUrl, R2UploadOptions, UploadResult, sanitizeFilenameForMetadata } from "@/lib/r2";
 
 export interface ImageRecord {
   id: string;
