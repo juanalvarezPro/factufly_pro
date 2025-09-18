@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, getCurrentUserOrganization } from "@/lib/session";
 import { constructMetadata } from "@/lib/utils";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { CategoryEditForm } from "@/components/forms/category-edit-form";
+import { CategoryEditForm } from "@/components/forms/category/category-edit-form";
+
 
 export const metadata = constructMetadata({
   title: "Editar Categoría – Factufly Pro",
