@@ -20,7 +20,7 @@ export const env = createEnv({
     R2_ACCESS_KEY_ID: z.string().min(1),
     R2_SECRET_ACCESS_KEY: z.string().min(1),
     R2_BUCKET: z.string().min(1),
-    R2_ENDPOINT: z.string().url().optional(),
+    R2_ENDPOINT: z.string().optional(),
     R2_PUBLIC_URL: z.string().url().optional(),
   },
   client: {
@@ -30,9 +30,9 @@ export const env = createEnv({
     NEXT_PUBLIC_STRIPE_BUSINESS_MONTHLY_PLAN_ID: z.string().min(1),
     NEXT_PUBLIC_STRIPE_BUSINESS_YEARLY_PLAN_ID: z.string().min(1),
     // Only public R2 variables for client-side URL construction
-    NEXT_PUBLIC_R2_ENDPOINT: z.string().url().optional(),
-    NEXT_PUBLIC_R2_BUCKET: z.string().min(1).optional(),
-    NEXT_PUBLIC_R2_ACCOUNT_ID: z.string().min(1).optional(),
+    NEXT_PUBLIC_R2_ENDPOINT: z.string().optional(),
+    NEXT_PUBLIC_R2_BUCKET: z.string().optional(),
+    NEXT_PUBLIC_R2_ACCOUNT_ID: z.string().optional(),
     NEXT_PUBLIC_R2_PUBLIC_URL: z.string().url().optional(),
   },
   runtimeEnv: {
