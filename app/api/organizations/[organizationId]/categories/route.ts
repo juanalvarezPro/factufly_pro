@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { withAuthorization } from "@/lib/middleware/auth";
+import { v4 as uuid } from "uuid";
 
 export const GET = withAuthorization({
   requiredPermission: { action: "READ", resource: "category" },
@@ -44,12 +44,9 @@ export const GET = withAuthorization({
     const categories = await prisma.productCategory.findMany({
       where,
       include: {
-        parent: true,
-        children: true,
         _count: {
           select: {
             products: true,
-            children: true,
           },
         },
       },
@@ -62,7 +59,6 @@ export const GET = withAuthorization({
     const categoriesWithCounts = categories.map((category) => ({
       ...category,
       productCount: category._count.products,
-      childCount: category._count.children,
     }));
 
     const totalPages = Math.ceil(total / limit);
@@ -100,8 +96,6 @@ export const POST = withAuthorization({
       description,
       parentId,
       status = "active",
-      visible = true,
-      sortOrder = 0,
     } = body;
 
     // Validate required fields
@@ -151,18 +145,15 @@ export const POST = withAuthorization({
         organizationId,
         name,
         description,
-        parentId,
-        status,
-        visible,
-        sortOrder,
-      },
+        ...(parentId ? { parentId } : {}),
+        active: status === "active",
+        isCombo: false,
+        uuid: uuid(), // @ts-ignore
+      },  
       include: {
-        parent: true,
-        children: true,
         _count: {
           select: {
             products: true,
-            children: true,
           },
         },
       },
@@ -172,7 +163,6 @@ export const POST = withAuthorization({
     const categoryWithCounts = {
       ...category,
       productCount: category._count.products,
-      childCount: category._count.children,
     };
 
     return NextResponse.json(categoryWithCounts, { status: 201 });
