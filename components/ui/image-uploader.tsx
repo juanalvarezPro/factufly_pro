@@ -11,33 +11,6 @@ import { UploadArea } from "./upload-area";
 import { FileList } from "./file-list";
 import { useImageUpload } from "@/hooks/use-image-upload";
 
-// Helper function to convert R2 key to public URL
-function getImageUrl(keyOrUrl: string): string {
-  // If it's already a full URL, return as is
-  if (keyOrUrl.startsWith('http://') || keyOrUrl.startsWith('https://')) {
-    return keyOrUrl;
-  }
-  
-  // If it's an R2 key, construct the public URL
-  // Use the actual R2 public URL from environment or construct it
-  const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
-  
-  if (r2PublicUrl) {
-    return `${r2PublicUrl}/${keyOrUrl}`;
-  }
-  
-  // Fallback: construct R2 URL from bucket and account ID
-  const r2Bucket = process.env.NEXT_PUBLIC_R2_BUCKET;
-  const r2AccountId = process.env.NEXT_PUBLIC_R2_ACCOUNT_ID;
-  
-  if (r2Bucket && r2AccountId) {
-    return `https://${r2Bucket}.${r2AccountId}.r2.cloudflarestorage.com/${keyOrUrl}`;
-  }
-  
-  // Last resort: return the key as is (might work if it's already a URL)
-  return keyOrUrl;
-}
-
 interface ImageUploaderProps {
   organizationId: string;
   entityType: "product" | "combo" | "packaging" | "organization";
