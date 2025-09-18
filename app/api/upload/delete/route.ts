@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getCurrentUser } from "@/lib/session";
-import { deleteFromR2, extractKeyFromUrl, batchDeleteFromR2 } from "@/lib/r2";
+import { deleteFromR2, extractKeyFromUrl } from "@/lib/r2";
 import { organizationService } from "@/lib/services/organization.service";
 
 // Validation schema for delete request
@@ -73,22 +73,22 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
-
+    
     // Delete files from R2
-    let result;
-    if (keys.length === 1) {
-      // Single delete
+    const success: string[] = [];
+    const failed: string[] = [];
+    
+    for (const key of keys) {
       try {
-        await deleteFromR2(keys[0]);
-        result = { success: keys, failed: [] };
+        await deleteFromR2(key);
+        success.push(key);
       } catch (error) {
-        console.error("Single delete error:", error);
-        result = { success: [], failed: keys };
+        console.error(`Failed to delete ${key}:`, error);
+        failed.push(key);
       }
-    } else {
-      // Batch delete
-      result = await batchDeleteFromR2(keys);
     }
+    
+    const result = { success, failed };
 
     // Return results
     return NextResponse.json({
