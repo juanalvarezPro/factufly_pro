@@ -6,6 +6,20 @@ import { v4 as uuidv4 } from "uuid";
 
 import { env } from "@/env.mjs";
 
+/**
+ * Sanitize filename for use in HTTP headers/metadata
+ * Removes or replaces characters that are not allowed in HTTP headers
+ */
+export function sanitizeFilenameForMetadata(filename: string): string {
+  return filename
+    // Remove or replace characters that are not allowed in HTTP headers
+    .replace(/[\r\n\t]/g, ' ') // Replace control characters with spaces
+    .replace(/[^\x20-\x7E]/g, '') // Remove non-ASCII characters
+    .replace(/["\\]/g, '') // Remove quotes and backslashes
+    .trim() // Remove leading/trailing whitespace
+    .substring(0, 255); // Limit length to prevent header size issues
+}
+
 // Cloudflare R2 Client Configuration
 const r2Client = new S3Client({
   region: "auto", // Cloudflare R2 uses 'auto' region
@@ -42,6 +56,8 @@ export interface R2UploadOptions {
   metadata?: Record<string, string>;
   isPublic?: boolean;
   maxSizeBytes?: number;
+  customFileName?: string;
+  useOriginalName?: boolean;
 }
 
 /**
@@ -53,11 +69,24 @@ export function generateR2Key(options: R2UploadOptions): string {
     entityType,
     entityId,
     fileName,
+    customFileName,
+    useOriginalName,
   } = options;
 
+  // Determine which filename to use
+  let targetFileName = fileName;
+  if (customFileName && !useOriginalName) {
+    // Use custom filename (like category name) but keep original extension
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
+    targetFileName = `${customFileName}.${fileExtension}`;
+  } else if (useOriginalName) {
+    // Use original filename as-is
+    targetFileName = fileName;
+  }
+
   // Clean filename and generate UUID
-  const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
-  const cleanFileName = fileName
+  const fileExtension = targetFileName.split('.').pop()?.toLowerCase() || '';
+  const cleanFileName = targetFileName
     .replace(/[^a-zA-Z0-9.-]/g, '_')
     .replace(/_{2,}/g, '_')
     .replace(/^_|_$/g, '');
@@ -138,7 +167,13 @@ export async function uploadToR2(
     throw new Error(validation.error);
   }
 
-  const key = generateR2Key(options);
+  // Sanitize customFileName if provided
+  const sanitizedOptions = {
+    ...options,
+    customFileName: options.customFileName ? sanitizeFilenameForMetadata(options.customFileName) : options.customFileName,
+  };
+  
+  const key = generateR2Key(sanitizedOptions);
   const { contentType, metadata = {}, isPublic = true } = options;
 
   // Add upload metadata
@@ -149,6 +184,8 @@ export async function uploadToR2(
     'organization': options.organizationSlug,
     'entity-type': options.entityType,
     ...(options.entityId && { 'entity-id': options.entityId }),
+    // Sanitize original filename for metadata
+    ...(metadata['original-name'] && { 'original-name': sanitizeFilenameForMetadata(metadata['original-name']) }),
   };
 
   try {
@@ -187,7 +224,13 @@ export async function generatePresignedUploadUrl(
   options: R2UploadOptions,
   expiresIn: number = 3600 // 1 hour
 ): Promise<PresignedUploadUrl> {
-  const key = generateR2Key(options);
+  // Sanitize customFileName if provided
+  const sanitizedOptions = {
+    ...options,
+    customFileName: options.customFileName ? sanitizeFilenameForMetadata(options.customFileName) : options.customFileName,
+  };
+  
+  const key = generateR2Key(sanitizedOptions);
   const { contentType, metadata = {} } = options;
 
   // Add upload metadata
