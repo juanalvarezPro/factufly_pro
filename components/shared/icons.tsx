@@ -30,8 +30,11 @@ import {
   SunMedium,
   Trash,
   User,
+  ListCheck,
   X,
 } from "lucide-react";
+
+
 
 export type Icon = LucideIcon;
 
@@ -48,6 +51,7 @@ export const Icons = {
   copy: Copy,
   dashboard: LayoutPanelLeft,
   ellipsis: MoreVertical,
+  listCheck: ListCheck,
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"
