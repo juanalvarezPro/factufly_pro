@@ -24,10 +24,10 @@ export interface CreateCategoryInput {
 export interface UpdateCategoryInput {
   name?: string;
   description?: string;
-  parentId?: string;
-  status?: "active" | "inactive";
-  visible?: boolean;
-  sortOrder?: number;
+  imagenAlt?: string;
+  summaryCardId?: string | null;
+  active?: boolean;
+  isCombo?: boolean;
 }
 
 export interface CategoryListQueryInput {
