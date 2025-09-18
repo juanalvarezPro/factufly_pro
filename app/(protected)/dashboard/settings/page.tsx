@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentUser, getCurrentUserOrganization } from "@/lib/session";
 import { constructMetadata } from "@/lib/utils";
 import { DeleteAccountSection } from "@/components/dashboard/delete-account";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { UserNameForm } from "@/components/forms/user-name-form";
 import { UserRoleForm } from "@/components/forms/user-role-form";
+import { OrganizationNameForm } from "@/components/forms/organization-name-form";
 
 export const metadata = constructMetadata({
   title: "Settings – Factufly Pro",
@@ -17,6 +18,8 @@ export default async function SettingsPage() {
 
   if (!user?.id) redirect("/login");
 
+  const organization = await getCurrentUserOrganization();
+
   return (
     <>
       <DashboardHeader
@@ -26,6 +29,14 @@ export default async function SettingsPage() {
       <div className="divide-y divide-muted pb-10">
         <UserNameForm user={{ id: user.id, name: user.name || "" }} />
         <UserRoleForm user={{ id: user.id, role: user.role }} />
+        {organization && (
+          <OrganizationNameForm 
+            organization={{
+              id: organization.id,
+              name: organization.name
+            }}
+          />
+        )}
         <DeleteAccountSection />
       </div>
     </>
