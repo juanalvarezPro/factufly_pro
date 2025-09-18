@@ -20,6 +20,28 @@ export function sanitizeFilenameForMetadata(filename: string): string {
     .substring(0, 255); // Limit length to prevent header size issues
 }
 
+/**
+ * Create standardized upload metadata
+ */
+export function createUploadMetadata(
+  options: R2UploadOptions,
+  additionalMetadata: Record<string, string> = {}
+): Record<string, string> {
+  const { metadata = {}, entityId } = options;
+  
+  return {
+    ...metadata,
+    'uploaded-by': 'factufly-pro',
+    'upload-timestamp': new Date().toISOString(),
+    'organization': options.organizationSlug,
+    'entity-type': options.entityType,
+    ...(entityId && { 'entity-id': entityId }),
+    // Sanitize original filename for metadata
+    ...(metadata['original-name'] && { 'original-name': sanitizeFilenameForMetadata(metadata['original-name']) }),
+    ...additionalMetadata,
+  };
+}
+
 // Cloudflare R2 Client Configuration
 const r2Client = new S3Client({
   region: "auto", // Cloudflare R2 uses 'auto' region
@@ -89,7 +111,9 @@ export function generateR2Key(options: R2UploadOptions): string {
   const cleanFileName = targetFileName
     .replace(/[^a-zA-Z0-9.-]/g, '_')
     .replace(/_{2,}/g, '_')
-    .replace(/^_|_$/g, '');
+    .replace(/\.{2,}/g, '.')  // Replace multiple dots with single dot
+    .replace(/^_|_$/g, '')
+    .replace(/^\.|\.$/g, ''); // Remove dots from start and end
   
   const uuid = uuidv4();
   const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -107,7 +131,8 @@ export function generateR2Key(options: R2UploadOptions): string {
 }
 
 /**
- * Generate public URL for an R2 object
+ * Generate public URL for an R2 object (server-side)
+ * For unified server/client usage, use the function from lib/utils/r2-client.ts
  */
 export function getPublicUrl(key: string): string {
   if (env.R2_PUBLIC_URL) {
@@ -174,19 +199,10 @@ export async function uploadToR2(
   };
   
   const key = generateR2Key(sanitizedOptions);
-  const { contentType, metadata = {}, isPublic = true } = options;
+  const { contentType, isPublic = true } = options;
 
-  // Add upload metadata
-  const uploadMetadata = {
-    ...metadata,
-    'uploaded-by': 'factufly-pro',
-    'upload-timestamp': new Date().toISOString(),
-    'organization': options.organizationSlug,
-    'entity-type': options.entityType,
-    ...(options.entityId && { 'entity-id': options.entityId }),
-    // Sanitize original filename for metadata
-    ...(metadata['original-name'] && { 'original-name': sanitizeFilenameForMetadata(metadata['original-name']) }),
-  };
+  // Create standardized upload metadata
+  const uploadMetadata = createUploadMetadata(sanitizedOptions);
 
   try {
     const command = new PutObjectCommand({
@@ -231,16 +247,10 @@ export async function generatePresignedUploadUrl(
   };
   
   const key = generateR2Key(sanitizedOptions);
-  const { contentType, metadata = {} } = options;
+  const { contentType } = options;
 
-  // Add upload metadata
-  const uploadMetadata = {
-    ...metadata,
-    'uploaded-by': 'factufly-pro',
-    'organization': options.organizationSlug,
-    'entity-type': options.entityType,
-    ...(options.entityId && { 'entity-id': options.entityId }),
-  };
+  // Create standardized upload metadata
+  const uploadMetadata = createUploadMetadata(sanitizedOptions);
 
   try {
     const command = new PutObjectCommand({
@@ -305,7 +315,8 @@ export async function generatePresignedDownloadUrl(
 }
 
 /**
- * Extract key from R2 URL
+ * Extract key from R2 URL (server-side)
+ * For unified server/client usage, use extractR2Key from lib/utils/r2-client.ts
  */
 export function extractKeyFromUrl(url: string): string | null {
   try {
