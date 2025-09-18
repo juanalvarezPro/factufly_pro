@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getCurrentUser } from "@/lib/session";
-import { generatePresignedUploadUrl, R2UploadOptions } from "@/lib/r2";
+import { generatePresignedUploadUrl, R2UploadOptions, sanitizeFilenameForMetadata } from "@/lib/r2";
 import { organizationService } from "@/lib/services/organization.service";
 
 // Validation schema for presigned URL request
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       isPublic: validatedData.isPublic,
       maxSizeBytes: validatedData.fileSize,
       metadata: {
-        'original-name': validatedData.fileName,
+        'original-name': sanitizeFilenameForMetadata(validatedData.fileName),
         'uploaded-by-user': user.id!,
         'upload-source': 'presigned-upload',
         'file-size': validatedData.fileSize.toString(),

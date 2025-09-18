@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getCurrentUser } from "@/lib/session";
-import { uploadToR2, R2UploadOptions, validateUpload } from "@/lib/r2";
+import { uploadToR2, R2UploadOptions, validateUpload, sanitizeFilenameForMetadata } from "@/lib/r2";
 import { organizationService } from "@/lib/services/organization.service";
 
 // Validation schema for upload request
@@ -11,6 +11,8 @@ const uploadSchema = z.object({
   entityType: z.enum(["product", "combo", "packaging", "organization", "user"]),
   entityId: z.string().cuid().optional(),
   isPublic: z.boolean().default(true),
+  customFileName: z.string().optional(),
+  useOriginalName: z.boolean().default(false),
 });
 
 export async function POST(request: NextRequest) {
@@ -41,6 +43,8 @@ export async function POST(request: NextRequest) {
       entityType: formData.get("entityType"),
       entityId: formData.get("entityId") || undefined,
       isPublic: formData.get("isPublic") === "true",
+      customFileName: formData.get("customFileName") || undefined,
+      useOriginalName: formData.get("useOriginalName") === "true",
     });
 
     // Verify user has access to the organization
@@ -68,8 +72,11 @@ export async function POST(request: NextRequest) {
       contentType: file.type,
       isPublic: uploadData.isPublic,
       maxSizeBytes: 10 * 1024 * 1024, // 10MB limit
+      // New options for filename control
+      customFileName: uploadData.customFileName,
+      useOriginalName: uploadData.useOriginalName,
       metadata: {
-        'original-name': file.name,
+        'original-name': sanitizeFilenameForMetadata(file.name),
         'uploaded-by-user': user.id!,
         'upload-source': 'web-app',
       },
@@ -91,7 +98,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload to R2
+    console.log("Upload options:", uploadOptions);
     const result = await uploadToR2(buffer, uploadOptions);
+    console.log("Upload result:", result);
 
     // Return success response
     return NextResponse.json({
