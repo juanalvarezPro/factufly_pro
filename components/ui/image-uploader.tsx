@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface ImageUploaderProps {
@@ -27,6 +27,7 @@ interface ImageUploaderProps {
   disabled?: boolean;
   value?: string[];
   onChange?: (urls: string[]) => void;
+  returnKey?: boolean; // If true, returns R2 key instead of URL
 }
 
 interface UploadedFile {
@@ -51,12 +52,13 @@ export function ImageUploader({
   disabled = false,
   value = [],
   onChange,
+  returnKey = false,
 }: ImageUploaderProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     if (!acceptedFileTypes.includes(file.type)) {
       return `Tipo de archivo no válido. Formatos aceptados: ${acceptedFileTypes.join(", ")}`;
     }
@@ -66,9 +68,9 @@ export function ImageUploader({
     }
     
     return null;
-  };
+  }, [acceptedFileTypes, maxSize]);
 
-  const handleFileUpload = async (files: File[]) => {
+  const handleFileUpload = useCallback(async (files: File[]) => {
     if (disabled) return;
     
     const validFiles: UploadedFile[] = [];
@@ -151,6 +153,9 @@ export function ImageUploader({
 
           const result = await response.json();
           
+          // Determine what to return based on returnKey prop
+          const returnValue = returnKey ? result.data?.key : result.data?.url;
+          
           // Update file with success status
           setUploadedFiles((prev) =>
             prev.map((f, i) =>
@@ -159,13 +164,13 @@ export function ImageUploader({
                     ...f,
                     status: "success" as const,
                     progress: 100,
-                    url: result.url,
+                    url: returnValue,
                   }
                 : f
             )
           );
 
-          return result.url;
+          return returnValue;
         } catch (error) {
           // Update file with error status
           setUploadedFiles((prev) =>
@@ -204,13 +209,13 @@ export function ImageUploader({
     } finally {
       setUploading(false);
     }
-  };
+  }, [disabled, maxFiles, uploadedFiles, value, organizationId, entityType, entityId, onChange, onUploadComplete, onError, returnKey, validateFile]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       handleFileUpload(acceptedFiles);
     },
-    [organizationId, entityType, entityId, disabled]
+    [handleFileUpload]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -272,18 +277,18 @@ export function ImageUploader({
       <Card
         {...getRootProps()}
         className={cn(
-          "border-2 border-dashed cursor-pointer transition-colors",
+          "cursor-pointer border-2 border-dashed transition-colors",
           dragActive || isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25",
           disabled && "cursor-not-allowed opacity-50"
         )}
       >
         <CardContent className="flex flex-col items-center justify-center py-8">
           <input {...getInputProps()} />
-          <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground text-center">
+          <Upload className="mb-2 size-8 text-muted-foreground" />
+          <p className="text-center text-sm text-muted-foreground">
             <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="mt-1 text-xs text-muted-foreground">
             {acceptedFileTypes.join(", ")} hasta {maxSize}MB
           </p>
           <p className="text-xs text-muted-foreground">
@@ -297,21 +302,21 @@ export function ImageUploader({
         <div className="space-y-2">
           <Label>Subiendo archivos</Label>
           {uploadedFiles.map((uploadFile, index) => (
-            <div key={index} className="flex items-center space-x-2 p-2 border rounded-md">
-              <div className="flex-shrink-0 w-8 h-8 bg-muted rounded flex items-center justify-center">
+            <div key={index} className="flex items-center space-x-2 rounded-md border p-2">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded bg-muted">
                 {uploadFile.status === "uploading" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="size-4 animate-spin" />
                 ) : uploadFile.status === "success" ? (
-                  <ImageIcon className="h-4 w-4 text-green-600" />
+                  <ImageIcon className="size-4 text-green-600" />
                 ) : uploadFile.status === "error" ? (
-                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertCircle className="size-4 text-red-600" />
                 ) : (
-                  <ImageIcon className="h-4 w-4" />
+                  <ImageIcon className="size-4" />
                 )}
               </div>
               
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{uploadFile.file.name}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{uploadFile.file.name}</p>
                 {uploadFile.status === "uploading" && (
                   <Progress value={uploadFile.progress} className="h-1" />
                 )}
@@ -338,7 +343,7 @@ export function ImageUploader({
                   : "Error"}
               </Badge>
 
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 {uploadFile.status === "error" ? (
                   <Button
                     size="sm"
@@ -353,7 +358,7 @@ export function ImageUploader({
                     variant="ghost"
                     onClick={() => removeFile(index)}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="size-4" />
                   </Button>
                 )}
               </div>
@@ -366,23 +371,25 @@ export function ImageUploader({
       {value.length > 0 && (
         <div className="space-y-2">
           <Label>Imágenes subidas</Label>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {value.map((url, index) => (
-              <Card key={index} className="relative group">
+              <Card key={index} className="group relative">
                 <CardContent className="p-2">
-                  <div className="aspect-square relative">
-                    <img
+                  <div className="relative aspect-square">
+                    <Image
                       src={url}
                       alt={`Imagen ${index + 1}`}
-                      className="w-full h-full object-cover rounded-md"
+                      className="size-full rounded-md object-cover"
+                      width={100}
+                      height={100}
                     />
                     <Button
                       size="sm"
                       variant="destructive"
-                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100"
                       onClick={() => removeUploadedImage(index)}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="size-3" />
                     </Button>
                   </div>
                 </CardContent>
@@ -395,7 +402,7 @@ export function ImageUploader({
       {/* Upload Status */}
       {uploading && (
         <Alert>
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="size-4 animate-spin" />
           <AlertDescription>
             Subiendo archivos... No cierres esta ventana.
           </AlertDescription>
