@@ -39,7 +39,7 @@ export function TablePagination({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={!hasPreviousPage}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="size-4" />
           Anterior
         </Button>
         
@@ -54,7 +54,7 @@ export function TablePagination({
           disabled={!hasNextPage}
         >
           Siguiente
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="size-4" />
         </Button>
       </div>
     </div>

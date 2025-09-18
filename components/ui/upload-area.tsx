@@ -69,7 +69,7 @@ export function UploadArea({
         dragActive && !disabled
           ? "border-primary bg-primary/5"
           : "border-muted-foreground/25 hover:border-muted-foreground/50",
-        disabled && "opacity-50 cursor-not-allowed",
+        disabled && "cursor-not-allowed opacity-50",
         !disabled && "cursor-pointer",
         className
       )}
@@ -91,9 +91,9 @@ export function UploadArea({
 
       <div className="flex flex-col items-center space-y-4">
         {dragActive ? (
-          <FileImage className="h-12 w-12 text-primary" />
+          <FileImage className="size-12 text-primary" />
         ) : (
-          <Upload className="h-12 w-12 text-muted-foreground" />
+          <Upload className="size-12 text-muted-foreground" />
         )}
 
         <div className="space-y-2">
