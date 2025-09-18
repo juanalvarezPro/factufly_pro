@@ -515,6 +515,157 @@ export class OrganizationService extends BaseService {
   }
 
   /**
+   * Ensure user has an organization - create one if they don't
+   */
+  async ensureUserHasOrganization(userId: string): Promise<OrganizationWithRelations | null> {
+    // Check if user already has an organization
+    const membership = await this.prisma.organizationMember.findFirst({
+      where: {
+        userId: userId,
+        status: UserStatus.approved,
+      },
+      include: {
+        organization: {
+          include: {
+            owner: true,
+            _count: {
+              select: {
+                members: true,
+                products: true,
+                productCombos: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (membership) {
+      return membership.organization;
+    }
+
+    // User doesn't have an organization, create one
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || !user.email) {
+      return null;
+    }
+
+    return await this.createDefaultOrganization(userId, user.email);
+  }
+
+  /**
+   * Create a default organization for a new user
+   */
+  async createDefaultOrganization(userId: string, userEmail: string, companyName?: string): Promise<OrganizationWithRelations> {
+    try {
+      return await this.withTransaction(async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id: userId }
+        });
+
+        if (!user) {
+          throw new ValidationError("User not found");
+        }
+
+        // Generate organization name based on company name or user info
+        let orgName: string;
+        let baseSlug: string;
+
+        if (companyName && companyName.trim()) {
+          orgName = companyName.trim();
+          baseSlug = companyName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        } else {
+          const userName = user.name || userEmail.split('@')[0];
+          orgName = `${userName}'s Organization`;
+          baseSlug = `${userName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-org`;
+        }
+
+        // Ensure unique slug
+        const slug = await this.generateUniqueSlug(baseSlug, tx);
+
+        // Create organization
+        const organization = await tx.organization.create({
+          data: {
+            name: orgName,
+            slug: slug,
+            settings: {
+              setupCompleted: true
+            },
+            owner: {
+              connect: { id: userId }
+            },
+          },
+          include: {
+            owner: true,
+            _count: {
+              select: {
+                members: true,
+                products: true,
+                productCombos: true,
+              },
+            },
+          },
+        });
+
+        // Add owner as organization member
+        await tx.organizationMember.create({
+          data: {
+            userId: userId,
+            organizationId: organization.id,
+            role: OrganizationRole.OWNER,
+            status: UserStatus.approved,
+            joinedAt: new Date(),
+          },
+        });
+
+        return organization;
+      });
+    } catch (error) {
+      this.handlePrismaError(error, "Default Organization");
+    }
+  }
+
+  /**
+   * Generate a unique slug for organization
+   */
+  private async generateUniqueSlug(baseSlug: string, tx: any): Promise<string> {
+    let slug = baseSlug;
+    let counter = 1;
+
+    while (true) {
+      const existing = await tx.organization.findUnique({
+        where: { slug: slug }
+      });
+
+      if (!existing) {
+        return slug;
+      }
+
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+  }
+
+  /**
+   * Get user membership in organization
+   */
+  async getUserMembership(userId: string, organizationId: string) {
+    return await this.prisma.organizationMember.findFirst({
+      where: {
+        userId,
+        organizationId,
+        status: "approved",
+      },
+      include: {
+        organization: true,
+      },
+    });
+  }
+
+  /**
    * Generate invitation token
    */
   private generateInvitationToken(): string {
