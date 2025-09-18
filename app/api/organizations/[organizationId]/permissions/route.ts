@@ -20,7 +20,7 @@ export async function GET(
     const organizationId = params.organizationId;
 
     // Get user's organization membership
-    const membership = await organizationService.getMembership(user.id!, organizationId);
+    const membership = await organizationService.getUserMembership(user.id!, organizationId);
     
     if (!membership) {
       return NextResponse.json(
