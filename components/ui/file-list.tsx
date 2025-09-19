@@ -73,12 +73,15 @@ export function FileList({
           {/* File Icon/Preview */}
           <div className="shrink-0">   
             {showPreview && file.preview ? (
-              <Image
-                src={file.preview}
-                alt={file.file.name}
-                className="size-10 rounded object-cover"
-                fill
-              />
+              <div className="relative size-10 overflow-hidden rounded">
+                <Image
+                  src={file.preview}
+                  alt={file.file.name}
+                  className="object-cover"
+                  fill
+                  sizes="40px"
+                />
+              </div>
             ) : (
               <ImageIcon className="size-10 text-muted-foreground" />
             )}
