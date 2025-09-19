@@ -193,7 +193,7 @@ export function PaginatedList<T>({
                       variant={pageNum === pagination.page ? "default" : "outline"}
                       size="sm"
                       onClick={() => handlePageChange(pageNum as number)}
-                      className="w-8 h-8"
+                      className="size-8"
                     >
                       {pageNum}
                     </Button>

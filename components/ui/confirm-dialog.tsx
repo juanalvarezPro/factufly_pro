@@ -151,7 +151,7 @@ export function DeleteConfirmDialog({
       description={
         <div className="space-y-2">
           <p>
-            Estás a punto de eliminar <strong>"{itemName}"</strong>.
+            Estás a punto de eliminar <strong>&quot;{itemName}&quot;</strong>.
           </p>
           {canRestore ? (
             <p className="text-sm text-muted-foreground"> 
@@ -194,7 +194,7 @@ export function RestoreConfirmDialog({
       title={`¿Restaurar ${itemType}?`}
       description={
         <p>
-          Estás a punto de restaurar <strong>"{itemName}"</strong>. 
+          Estás a punto de restaurar <strong>&quot;{itemName}&quot;</strong>. 
           El {itemType} volverá a estar disponible en el sistema.
         </p>
       }

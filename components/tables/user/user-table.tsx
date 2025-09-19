@@ -263,7 +263,7 @@ export function UserTable({
               <TableRow>
                 <TableCell colSpan={7} className="py-8 text-center">
                   <div className="text-muted-foreground">
-                    <Users className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                    <Users className="mx-auto mb-2 size-8 opacity-50" />
                     {search
                       ? "No se encontraron usuarios"
                       : "No hay usuarios registrados"}
@@ -275,7 +275,7 @@ export function UserTable({
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10">
+                      <Avatar className="size-10">
                         <AvatarImage
                           src={user.avatar || "/placeholder-avatar.png"}
                           alt={user.name}
@@ -295,11 +295,11 @@ export function UserTable({
                   <TableCell>
                     <div className="space-y-1">
                       <div className="flex items-center text-sm">
-                        <Mail className="mr-2 h-3 w-3 text-muted-foreground" />
+                        <Mail className="mr-2 size-3 text-muted-foreground" />
                         {user.email}
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground">
-                        <Phone className="mr-2 h-3 w-3" />
+                        <Phone className="mr-2 size-3" />
                         {user.phone}
                       </div>
                     </div>
