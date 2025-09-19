@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import type { OrganizationRole, PermissionAction, ResourceType } from "@/lib/validations/auth";
@@ -272,7 +273,7 @@ export function withPermissions<P extends object>(
     }
     
     if (!canAccess) {
-      return fallback ? <fallback {...props} /> : null;
+      return fallback ? React.createElement(fallback, props) : null;
     }
     
     return <Component {...props} />;
