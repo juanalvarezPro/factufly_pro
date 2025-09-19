@@ -65,7 +65,7 @@ export function UploadArea({
   return (
     <div
       className={cn(
-        "relative border-2 border-dashed rounded-lg p-8 text-center transition-colors",
+        "relative rounded-lg border-2 border-dashed p-8 text-center transition-colors",
         dragActive && !disabled
           ? "border-primary bg-primary/5"
           : "border-muted-foreground/25 hover:border-muted-foreground/50",

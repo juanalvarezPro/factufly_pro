@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 import { 
   CheckCircle, 
   AlertCircle, 
@@ -39,13 +40,13 @@ export function FileList({
   const getStatusIcon = (status: UploadedFile["status"]) => {
     switch (status) {
       case "success":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="size-4 text-green-600" />;  
       case "error":
-        return <AlertCircle className="h-4 w-4 text-red-600" />;
+        return <AlertCircle className="size-4 text-red-600" />;
       case "uploading":
-        return <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />;
+        return <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />;
       default:
-        return <div className="h-4 w-4 rounded-full bg-gray-300" />;
+        return <div className="size-4 rounded-full bg-gray-300" />;
     }
   };
 
@@ -67,24 +68,25 @@ export function FileList({
       {files.map((file, index) => (
         <div
           key={`${file.file.name}-${index}`}
-          className="flex items-center space-x-3 p-3 border rounded-lg bg-muted/50"
+          className="flex items-center space-x-3 rounded-lg border bg-muted/50 p-3"
         >
           {/* File Icon/Preview */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">   
             {showPreview && file.preview ? (
-              <img
+              <Image
                 src={file.preview}
                 alt={file.file.name}
-                className="h-10 w-10 rounded object-cover"
+                className="size-10 rounded object-cover"
+                fill
               />
             ) : (
-              <ImageIcon className="h-10 w-10 text-muted-foreground" />
+              <ImageIcon className="size-10 text-muted-foreground" />
             )}
           </div>
 
           {/* File Info */}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-foreground">
               {file.file.name}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -101,7 +103,7 @@ export function FileList({
             
             {/* Error Message */}
             {file.status === "error" && file.error && (
-              <p className="text-xs text-red-600 mt-1">{file.error}</p>
+              <p className="mt-1 text-xs text-red-600">{file.error}</p>
             )}
           </div>
 
@@ -118,9 +120,9 @@ export function FileList({
                 size="sm"
                 variant="outline"
                 onClick={() => onRetry(index)}
-                className="h-8 w-8 p-0"
+                className="size-8 p-0"
               >
-                <RotateCcw className="h-3 w-3" />
+                <RotateCcw className="size-3" />
               </Button>
             )}
             
@@ -128,9 +130,9 @@ export function FileList({
               size="sm"
               variant="ghost"
               onClick={() => onRemove(index)}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+              className="size-8 p-0 text-muted-foreground hover:text-destructive"
             >
-              <X className="h-3 w-3" />
+              <X className="size-3" />
             </Button>
           </div>
         </div>

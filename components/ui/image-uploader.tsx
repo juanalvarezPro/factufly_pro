@@ -210,7 +210,7 @@ export function ImageUploader({
               // Extract filename from the R2 key
               const filename = url.split('/').pop() || `Imagen ${index + 1}`;
               return (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                <div key={index} className="flex items-center justify-between rounded-md border bg-muted/50 p-3">
                   <div className="flex items-center space-x-2">
                     <ImageIcon className="size-4 text-green-600" />
                     <span className="text-sm font-medium">Imagen subida: {filename}</span>
@@ -225,7 +225,7 @@ export function ImageUploader({
                       removeUploadedImage(index);
                     }}
                   >
-                    <X className="size-3 mr-1" />
+                    <X className="mr-1 size-3" />
                     Eliminar
                   </Button>
                 </div>

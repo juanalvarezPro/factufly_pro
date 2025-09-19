@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 
 export default function BentoGrid() {
@@ -318,12 +316,12 @@ export default function BentoGrid() {
                     <span className="block h-fit rounded-md border bg-muted/50 px-2 py-1 text-xs">
                       Glodie
                     </span>
-                    <div className="size-7 ring-4 ring-background rounded-full bg-muted flex items-center justify-center text-xs">
+                    <div className="flex size-7 items-center justify-center rounded-full bg-muted text-xs ring-4 ring-background">
                       G
                     </div>
                   </div>
                   <div className="relative ml-[calc(50%-1rem)] flex items-center gap-2">
-                    <div className="size-8 ring-4 ring-background rounded-full bg-muted flex items-center justify-center text-xs">
+                    <div className="flex size-8 items-center justify-center rounded-full bg-muted text-xs ring-4 ring-background">
                       M
                     </div>
                     <span className="block h-fit rounded-md border bg-muted/50 px-2 py-1 text-xs">
@@ -334,7 +332,7 @@ export default function BentoGrid() {
                     <span className="block h-fit rounded-md border bg-muted/50 px-2 py-1 text-xs">
                       B. Ng
                     </span>
-                    <div className="size-7 ring-4 ring-background rounded-full bg-muted flex items-center justify-center text-xs">
+                    <div className="flex size-7 items-center justify-center rounded-full bg-muted text-xs ring-4 ring-background">
                       B
                     </div>
                   </div>

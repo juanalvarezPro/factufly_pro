@@ -230,7 +230,7 @@ export function UserTable({
         {/* Search and filters */}
         <div className="flex items-center space-x-4 pt-4">
           <div className="relative max-w-sm flex-1">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2 top-2.5 size-4 text-muted-foreground" />
             <Input
               placeholder="Buscar usuarios..."
               value={search}
@@ -239,7 +239,7 @@ export function UserTable({
             />
           </div>
           <Button>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 size-4" />
             Invitar Usuario
           </Button>
         </div>
@@ -311,7 +311,7 @@ export function UserTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-1">
-                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <Shield className="size-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
                         {user.permissions.length} permisos
                       </span>
@@ -320,22 +320,22 @@ export function UserTable({
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
+                        <Button variant="ghost" className="size-8 p-0">
+                          <MoreHorizontal className="size-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => onView?.(user)}>
-                          <Eye className="mr-2 h-4 w-4" />
+                          <Eye className="mr-2 size-4" />
                           Ver perfil
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onEdit?.(user)}>
-                          <Pencil className="mr-2 h-4 w-4" />
+                          <Pencil className="mr-2 size-4" />
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem>
-                          <Shield className="mr-2 h-4 w-4" />
+                          <Shield className="mr-2 size-4" />
                           Permisos
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -352,7 +352,7 @@ export function UserTable({
                           onClick={() => onDelete?.(user)}
                           className="text-red-600"
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
+                          <Trash2 className="mr-2 size-4" />
                           Eliminar
                         </DropdownMenuItem>
                       </DropdownMenuContent>

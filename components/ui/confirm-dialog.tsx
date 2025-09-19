@@ -81,8 +81,8 @@ export function ConfirmDialog({
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
           <div className="flex items-center gap-3">
-            <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center`}>
-              <Icon className={`w-5 h-5 ${config.iconColor}`} />
+            <div className={`flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 `}>
+              <Icon className={`size-5 ${config.iconColor}`} />
             </div>
             <div className="flex-1">
               <AlertDialogTitle className="text-left">{title}</AlertDialogTitle>
@@ -96,7 +96,7 @@ export function ConfirmDialog({
           </AlertDialogDescription>
           
           {children && (
-            <div className="rounded-lg border p-3 bg-muted/50">
+            <div className="rounded-lg border bg-muted/50 p-3">
               {children}
             </div>
           )}
@@ -114,7 +114,7 @@ export function ConfirmDialog({
               disabled={isLoading}
               className={config.confirmButtonClass}
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
               {confirmText}
             </Button>
           </AlertDialogAction>
@@ -154,11 +154,11 @@ export function DeleteConfirmDialog({
             Estás a punto de eliminar <strong>"{itemName}"</strong>.
           </p>
           {canRestore ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground"> 
               Esta acción se puede deshacer restaurando el {itemType} más tarde.
             </p>
           ) : (
-            <p className="text-sm text-red-600 font-medium">
+            <p className="text-sm font-medium text-red-600">  
               Esta acción es permanente y no se puede deshacer.
             </p>
           )}

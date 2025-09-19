@@ -28,7 +28,7 @@ export function CategoryEditForm({
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+          <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-b-2 border-primary"></div>
           <p className="text-muted-foreground">Cargando categoría...</p>
         </div>
       </div>

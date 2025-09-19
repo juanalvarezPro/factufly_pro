@@ -544,7 +544,7 @@ export function ComboForm({
               ) : (
                 <Card>
                   <CardContent className="p-8 text-center text-muted-foreground">
-                    <Package className="mx-auto mb-2 h-8 w-8" />
+                    <Package className="mx-auto mb-2 size-8" />
                     <p>No hay productos agregados al combo</p>
                     <p className="text-sm">Agrega al menos un producto para crear el combo</p>
                   </CardContent>

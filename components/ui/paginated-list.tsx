@@ -38,7 +38,7 @@ export function PaginatedList<T>({
   className = "",
 }: PaginatedListProps<T>) {
   const defaultRenderEmpty = () => (
-    <div className="text-center py-8 text-muted-foreground">
+    <div className="py-8 text-center text-muted-foreground">
       <p>No hay elementos para mostrar</p>
     </div>
   );
@@ -167,7 +167,7 @@ export function PaginatedList<T>({
               onClick={() => handlePageChange(1)}
               disabled={pagination.page === 1}
             >
-              <ChevronsLeft className="h-4 w-4" />
+              <ChevronsLeft className="size-4" />  
             </Button>
 
             {/* Previous page */}
@@ -177,7 +177,7 @@ export function PaginatedList<T>({
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={!pagination.hasPrev}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="size-4" />
             </Button>
 
             {/* Page numbers */}
@@ -209,7 +209,7 @@ export function PaginatedList<T>({
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={!pagination.hasNext}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="size-4" />
             </Button>
 
             {/* Last page */}
@@ -219,7 +219,7 @@ export function PaginatedList<T>({
               onClick={() => handlePageChange(pagination.totalPages)}
               disabled={pagination.page === pagination.totalPages}
             >
-              <ChevronsRight className="h-4 w-4" />
+              <ChevronsRight className="size-4" />
             </Button>
           </div>
         </CardFooter>
@@ -243,7 +243,7 @@ export function PaginatedGrid<T>({
   ...props
 }: PaginatedListProps<T> & { columns?: number }) {
   const defaultGridSkeleton = () => (
-    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${columns} gap-4`}>
+    <div className={`lg:grid-cols- grid grid-cols-1 gap-4 md:grid-cols-2${columns}`}> 
       {Array.from({ length: pagination?.limit || 12 }).map((_, i) => (
         <Skeleton key={i} className="h-48 w-full" />
       ))}
@@ -256,11 +256,11 @@ export function PaginatedGrid<T>({
         {isLoading ? (
           renderSkeleton ? renderSkeleton() : defaultGridSkeleton()
         ) : data.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="py-8 text-center text-muted-foreground">
             {renderEmpty ? renderEmpty() : <p>No hay elementos para mostrar</p>}
           </div>
         ) : (
-          <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${columns} gap-4`}>
+          <div className={`lg:grid-cols- grid grid-cols-1 gap-4 md:grid-cols-2${columns}`}> 
             {data.map((item, index) => (
               <div key={index}>
                 {renderItem(item, index)}
@@ -285,7 +285,7 @@ export function PaginatedGrid<T>({
               onClick={() => onPageChange?.(pagination.page - 1)}
               disabled={!pagination.hasPrev}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="size-4" />
               Anterior
             </Button>
             
@@ -300,7 +300,7 @@ export function PaginatedGrid<T>({
               disabled={!pagination.hasNext}
             >
               Siguiente
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="size-4" />
             </Button>
           </div>
         </CardFooter>
