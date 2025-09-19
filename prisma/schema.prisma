@@ -1,18 +1,467 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider     = "postgresql"
-  url          = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @map("updated_at")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model User {
+  id                     String                   @id @default(cuid())
+  name                   String?
+  email                  String?                  @unique
+  emailVerified          DateTime?
+  image                  String?
+  createdAt              DateTime                 @default(now()) @map("created_at")
+  updatedAt              DateTime                 @default(now()) @map("updated_at")
+  role                   UserRole                 @default(USER)
+  stripeCustomerId       String?                  @unique @map("stripe_customer_id")
+  stripeSubscriptionId   String?                  @unique @map("stripe_subscription_id")
+  stripePriceId          String?                  @map("stripe_price_id")
+  stripeCurrentPeriodEnd DateTime?                @map("stripe_current_period_end")
+  accounts               Account[]
+  auditLogs              AuditLog[]
+  sentInvitations        OrganizationInvitation[]
+  invitedMembers         OrganizationMember[]     @relation("InvitedBy")
+  organizationMembers    OrganizationMember[]
+  ownedOrganizations     Organization[]
+  sessions               Session[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Organization {
+  id                     String                   @id @default(cuid())
+  name                   String
+  slug                   String                   @unique
+  domain                 String?                  @unique
+  logo                   String?
+  ownerId                String                   @map("owner_id")
+  subscriptionStatus     SubscriptionStatus       @default(trialing) @map("subscription_status")
+  trialEndsAt            DateTime?                @map("trial_ends_at")
+  settings               Json                     @default("{}")
+  createdAt              DateTime                 @default(now()) @map("created_at")
+  updatedAt              DateTime                 @updatedAt @map("updated_at")
+  comboAllowedCategories ComboAllowedCategory[]
+  comboProductExcludes   ComboProductExclude[]
+  comboProducts          ComboProduct[]
+  measures               Measure[]
+  invitations            OrganizationInvitation[]
+  members                OrganizationMember[]
+  owner                  User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  packagingStocks        PackagingStock[]
+  packagings             Packaging[]
+  productCards           ProductCard[]
+  productCategories      ProductCategory[]
+  productComboCategories ProductComboCategory[]
+  productCombos          ProductCombo[]
+  productRules           ProductRule[]
+  productStocks          ProductStock[]
+  products               Product[]
+  stateStrategies        StateStrategy[]
+  summaryCards           SummaryCard[]
+
+  @@index([slug])
+  @@index([domain])
+  @@index([ownerId])
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String           @id @default(cuid())
+  userId         String           @map("user_id")
+  organizationId String           @map("organization_id")
+  role           OrganizationRole @default(USER)
+  status         UserStatus       @default(pending)
+  invitedBy      String?          @map("invited_by")
+  joinedAt       DateTime?        @map("joined_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  inviter        User?            @relation("InvitedBy", fields: [invitedBy], references: [id])
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("organization_members")
+}
+
+model OrganizationInvitation {
+  id             String           @id @default(cuid())
+  email          String
+  organizationId String           @map("organization_id")
+  role           OrganizationRole @default(USER)
+  invitedBy      String           @map("invited_by")
+  token          String           @unique
+  expiresAt      DateTime         @map("expires_at")
+  acceptedAt     DateTime?        @map("accepted_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  inviter        User             @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("organization_invitations")
+}
+
+model SummaryCard {
+  id                String            @id @default(cuid())
+  organizationId    String            @map("organization_id")
+  name              String
+  camelName         String            @map("camel_name")
+  description       String
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  productCategories ProductCategory[]
+  organization      Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("summary_cards")
+}
+
+model ProductCategory {
+  id                     String                 @id @default(cuid())
+  organizationId         String                 @map("organization_id")
+  name                   String
+  description            String?
+  imagenAlt              String?                @map("imagen_alt")
+  active                 Boolean                @default(true)
+  summaryCardId          String?                @map("summary_card_id")
+  isCombo                Boolean                @default(false) @map("is_combo")
+  uuid                   String?                @unique @db.Uuid
+  createdAt              DateTime               @default(now()) @map("created_at")
+  updatedAt              DateTime               @updatedAt @map("updated_at")
+  comboAllowedCategories ComboAllowedCategory[]
+  organization           Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  summaryCard            SummaryCard?           @relation(fields: [summaryCardId], references: [id])
+  products               Product[]
+
+  @@index([organizationId])
+  @@index([organizationId, active])
+  @@map("product_categories")
+}
+
+model ProductCard {
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  cardName       String       @map("card_name")
+  camelName      String?      @map("camel_name")
+  description    String
+  active         Boolean      @default(true)
+  imageAlt       String       @map("image_alt")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  products       Product[]
+
+  @@index([organizationId])
+  @@map("product_cards")
+}
+
+model Product {
+  id                   String                @id @default(cuid())
+  organizationId       String                @map("organization_id")
+  name                 String
+  description          String?
+  imageAlt             String                @map("image_alt")
+  abbreviation         String
+  sku                  String?               @unique
+  barcode              String?
+  price                Decimal               @db.Decimal(10, 2)
+  costPrice            Decimal?              @map("cost_price") @db.Decimal(10, 2)
+  categoryId           String                @map("category_id")
+  cardId               String                @map("card_id")
+  status               String                @default("active")
+  isVisible            Boolean               @default(true) @map("is_visible")
+  isFeatured           Boolean               @default(false) @map("is_featured")
+  tags                 String[]              @default([])
+  images               String[]              @default([])
+  uuid                 String?               @unique @db.Uuid
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  deletedAt            DateTime?             @map("deleted_at")
+  comboProductExcludes ComboProductExclude[]
+  comboProducts        ComboProduct[]
+  stocks               ProductStock[]
+  card                 ProductCard           @relation(fields: [cardId], references: [id])
+  category             ProductCategory       @relation(fields: [categoryId], references: [id])
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, abbreviation])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, isVisible])
+  @@index([organizationId, isFeatured])
+  @@index([deletedAt])
+  @@index([sku])
+  @@index([barcode])
+  @@map("products")
+}
+
+model Measure {
+  id             String         @id @default(cuid())
+  organizationId String         @map("organization_id")
+  name           String
+  abbreviation   String
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  productStocks  ProductStock[]
+
+  @@unique([organizationId, name])
+  @@unique([organizationId, abbreviation])
+  @@index([organizationId])
+  @@map("measures")
+}
+
+model ProductStock {
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  productId      String       @map("product_id")
+  measureId      String       @map("measure_id")
+  stockQuantity  Int          @default(0) @map("stock_quantity")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  measure        Measure      @relation(fields: [measureId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("product_stocks")
+}
+
+model Packaging {
+  id             String           @id @default(cuid())
+  organizationId String           @map("organization_id")
+  name           String
+  imageAlt       String?          @map("image_alt")
+  price          Decimal          @db.Decimal(10, 2)
+  active         Boolean          @default(true)
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  stocks         PackagingStock[]
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  productCombos  ProductCombo[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("packagings")
+}
+
+model PackagingStock {
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  packagingId    String       @map("packaging_id")
+  stockQuantity  Int          @default(0) @map("stock_quantity")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  packaging      Packaging    @relation(fields: [packagingId], references: [id])
+
+  @@index([organizationId])
+  @@map("packaging_stocks")
+}
+
+model ProductComboCategory {
+  id             String         @id @default(cuid())
+  organizationId String         @map("organization_id")
+  name           String
+  description    String?
+  active         Boolean        @default(true)
+  uuid           String?        @unique @db.Uuid
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  productCombos  ProductCombo[]
+
+  @@index([organizationId])
+  @@map("product_combo_categories")
+}
+
+model ProductCombo {
+  id                     String                 @id @default(cuid())
+  organizationId         String                 @map("organization_id")
+  comboName              String                 @map("combo_name")
+  description            String
+  imageAlt               String                 @map("image_alt")
+  abbreviation           String
+  packagingId            String                 @map("packaging_id")
+  price                  Decimal                @db.Decimal(10, 2)
+  active                 Boolean                @default(true)
+  modalQuick             Boolean                @default(false) @map("modal_quick")
+  categoryId             String                 @map("category_id")
+  slug                   String
+  metaDescription        String                 @map("meta_description")
+  tags                   String
+  uuid                   String?                @unique @db.Uuid
+  createdAt              DateTime               @default(now()) @map("created_at")
+  updatedAt              DateTime               @updatedAt @map("updated_at")
+  deletedAt              DateTime?              @map("deleted_at")
+  comboAllowedCategories ComboAllowedCategory[]
+  comboProductExcludes   ComboProductExclude[]
+  comboProducts          ComboProduct[]
+  category               ProductComboCategory   @relation(fields: [categoryId], references: [id])
+  organization           Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  packaging              Packaging              @relation(fields: [packagingId], references: [id])
+
+  @@unique([organizationId, abbreviation])
+  @@index([organizationId])
+  @@index([organizationId, active])
+  @@index([slug])
+  @@index([deletedAt])
+  @@index([organizationId, slug])
+  @@map("product_combos")
+}
+
+model ComboProduct {
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  comboId        String       @map("combo_id")
+  productId      String       @map("product_id")
+  quantity       Int
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  combo          ProductCombo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("combo_products")
+}
+
+model StateStrategy {
+  id             String        @id @default(cuid())
+  organizationId String        @map("organization_id")
+  name           String
+  strategy       String
+  description    String
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  productRules   ProductRule[]
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("state_strategies")
+}
+
+model ProductRule {
+  id                     String                 @id @default(cuid())
+  organizationId         String                 @map("organization_id")
+  name                   String
+  strategyId             String                 @map("strategy_id")
+  limit                  Int?
+  exempt                 Int?
+  alert                  String?
+  createdAt              DateTime               @default(now()) @map("created_at")
+  updatedAt              DateTime               @updatedAt @map("updated_at")
+  comboAllowedCategories ComboAllowedCategory[]
+  organization           Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  strategy               StateStrategy          @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("product_rules")
+}
+
+model ComboAllowedCategory {
+  id             String          @id @default(cuid())
+  organizationId String          @map("organization_id")
+  comboId        String          @map("combo_id")
+  categoryId     String          @map("category_id")
+  ruleId         String?         @map("rule_id")
+  isRequired     Boolean         @default(false) @map("is_required")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  category       ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  combo          ProductCombo    @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rule           ProductRule?    @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("combo_allowed_categories")
+}
+
+model ComboProductExclude {
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  comboId        String       @map("combo_id")
+  productId      String       @map("product_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  combo          ProductCombo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("combo_product_excludes")
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  details      Json?
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 enum UserRole {
   ADMIN
   USER
+  DEV
 }
 
 enum UserStatus {
@@ -33,479 +482,4 @@ enum OrganizationRole {
   ADMIN
   MANAGER
   USER
-}
-
-model Account {
-  id                String   @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?  @db.Text
-  access_token      String?  @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?  @db.Text
-  session_state     String?
-  createdAt         DateTime @default(now()) @map(name: "created_at")
-  updatedAt         DateTime @default(now()) @map(name: "updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@index([userId])
-  @@map(name: "accounts")
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map(name: "sessions")
-}
-
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  createdAt     DateTime  @default(now()) @map(name: "created_at")
-  updatedAt     DateTime  @default(now()) @map(name: "updated_at")
-  role          UserRole  @default(USER)
-
-  accounts             Account[]
-  sessions             Session[]
-  ownedOrganizations   Organization[]
-  organizationMembers  OrganizationMember[]
-  invitedMembers       OrganizationMember[] @relation("InvitedBy")
-  sentInvitations      OrganizationInvitation[]
-
-  stripeCustomerId       String?   @unique @map(name: "stripe_customer_id")
-  stripeSubscriptionId   String?   @unique @map(name: "stripe_subscription_id")
-  stripePriceId          String?   @map(name: "stripe_price_id")
-  stripeCurrentPeriodEnd DateTime? @map(name: "stripe_current_period_end")
-
-  @@map(name: "users")
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map(name: "verification_tokens")
-}
-
-// ===== ORGANIZATION MODELS =====
-
-model Organization {
-  id                 String             @id @default(cuid())
-  name               String
-  slug               String             @unique
-  domain             String?            @unique
-  logo               String?
-  ownerId            String             @map("owner_id")
-  subscriptionStatus SubscriptionStatus @default(trialing) @map("subscription_status")
-  trialEndsAt        DateTime?          @map("trial_ends_at")
-  settings           Json               @default("{}")
-  createdAt          DateTime           @default(now()) @map("created_at")
-  updatedAt          DateTime           @updatedAt @map("updated_at")
-
-  // Relations
-  owner   User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  members OrganizationMember[]
-  invitations OrganizationInvitation[]
-
-  // Business Logic Relations
-  summaryCards            SummaryCard[]
-  productCategories       ProductCategory[]
-  productCards            ProductCard[]
-  products                Product[]
-  measures                Measure[]
-  productStocks           ProductStock[]
-  packagings              Packaging[]
-  packagingStocks         PackagingStock[]
-  productComboCategories  ProductComboCategory[]
-  productCombos           ProductCombo[]
-  comboProducts           ComboProduct[]
-  stateStrategies         StateStrategy[]
-  productRules            ProductRule[]
-  comboAllowedCategories  ComboAllowedCategory[]
-  comboProductExcludes    ComboProductExclude[]
-
-  @@index([slug])
-  @@index([domain])
-  @@index([ownerId])
-  @@map("organizations")
-}
-
-model OrganizationMember {
-  id             String           @id @default(cuid())
-  userId         String           @map("user_id")
-  organizationId String           @map("organization_id")
-  role           OrganizationRole @default(USER)
-  status         UserStatus       @default(pending)
-  invitedBy      String?          @map("invited_by")
-  joinedAt       DateTime?        @map("joined_at")
-  createdAt      DateTime         @default(now()) @map("created_at")
-  updatedAt      DateTime         @updatedAt @map("updated_at")
-
-  // Relations
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  inviter      User?        @relation("InvitedBy", fields: [invitedBy], references: [id], onDelete: SetNull)
-
-  @@unique([userId, organizationId])
-  @@index([userId])
-  @@index([organizationId])
-  @@map("organization_members")
-}
-
-model OrganizationInvitation {
-  id             String           @id @default(cuid())
-  email          String
-  organizationId String           @map("organization_id")
-  role           OrganizationRole @default(USER)
-  invitedBy      String           @map("invited_by")
-  token          String           @unique
-  expiresAt      DateTime         @map("expires_at")
-  acceptedAt     DateTime?        @map("accepted_at")
-  createdAt      DateTime         @default(now()) @map("created_at")
-
-  // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  inviter      User         @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
-  @@index([email])
-  @@map("organization_invitations")
-}
-
-// ===== BUSINESS LOGIC MODELS =====
-
-model SummaryCard {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  name           String
-  camelName      String   @map("camel_name")
-  description    String
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization      Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  productCategories ProductCategory[]
-
-  @@index([organizationId])
-  @@map("summary_cards")
-}
-
-model ProductCategory {
-  id            String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  name          String
-  description   String?
-  imagenAlt     String?  @map("imagen_alt")
-  active        Boolean  @default(true)
-  summaryCardId String?  @map("summary_card_id")
-  isCombo       Boolean  @default(false) @map("is_combo")
-  uuid          String?  @unique @db.Uuid
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization         Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  summaryCard          SummaryCard?           @relation(fields: [summaryCardId], references: [id], onDelete: SetNull)
-  products             Product[]
-  comboAllowedCategories ComboAllowedCategory[]
-
-  @@index([organizationId])
-  @@index([organizationId, active])
-  @@map("product_categories")
-}
-
-model ProductCard {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  cardName       String   @map("card_name")
-  camelName      String?  @map("camel_name")
-  description    String
-  active         Boolean  @default(true)
-  imageAlt       String   @map("image_alt")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  products     Product[]
-
-  @@index([organizationId])
-  @@map("product_cards")
-}
-
-model Product {
-  id             String    @id @default(cuid())
-  organizationId String    @map("organization_id")
-  name           String
-  description    String?
-  imageAlt       String    @map("image_alt")
-  abbreviation   String
-  sku            String?   @unique
-  barcode        String?
-  price          Decimal   @db.Decimal(10, 2)
-  costPrice      Decimal?  @map("cost_price") @db.Decimal(10, 2)
-  categoryId     String    @map("category_id")
-  cardId         String    @map("card_id")
-  status         String    @default("active") // active, inactive, archived, discontinued
-  isVisible      Boolean   @default(true) @map("is_visible")
-  isFeatured     Boolean   @default(false) @map("is_featured")
-  tags           String[]  @default([])
-  images         String[]  @default([])
-  uuid           String?   @unique @db.Uuid
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  deletedAt      DateTime? @map("deleted_at")
-
-  // Relations
-  organization         Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  category             ProductCategory        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  card                 ProductCard            @relation(fields: [cardId], references: [id], onDelete: Restrict)
-  stocks               ProductStock[]
-  comboProducts        ComboProduct[]
-  comboProductExcludes ComboProductExclude[]
-
-  @@unique([organizationId, abbreviation])
-  @@index([organizationId])
-  @@index([organizationId, status])
-  @@index([organizationId, isVisible])
-  @@index([organizationId, isFeatured])
-  @@index([deletedAt])
-  @@index([sku])
-  @@index([barcode])
-  @@map("products")
-}
-
-model Measure {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  name           String
-  abbreviation   String
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  productStocks ProductStock[]
-
-  @@unique([organizationId, name])
-  @@unique([organizationId, abbreviation])
-  @@index([organizationId])
-  @@map("measures")
-}
-
-model ProductStock {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  productId      String   @map("product_id")
-  measureId      String   @map("measure_id")
-  stockQuantity  Int      @default(0) @map("stock_quantity")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
-  measure      Measure      @relation(fields: [measureId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
-  @@map("product_stocks")
-}
-
-model Packaging {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  name           String
-  imageAlt       String?  @map("image_alt")
-  price          Decimal  @db.Decimal(10, 2)
-  active         Boolean  @default(true)
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  stocks          PackagingStock[]
-  productCombos   ProductCombo[]
-
-  @@unique([organizationId, name])
-  @@index([organizationId])
-  @@map("packagings")
-}
-
-model PackagingStock {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  packagingId    String   @map("packaging_id")
-  stockQuantity  Int      @default(0) @map("stock_quantity")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  packaging    Packaging    @relation(fields: [packagingId], references: [id], onDelete: Restrict)
-
-  @@index([organizationId])
-  @@map("packaging_stocks")
-}
-
-model ProductComboCategory {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  name           String
-  description    String?
-  active         Boolean  @default(true)
-  uuid           String?  @unique @db.Uuid
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  productCombos ProductCombo[]
-
-  @@index([organizationId])
-  @@map("product_combo_categories")
-}
-
-model ProductCombo {
-  id              String    @id @default(cuid())
-  organizationId  String    @map("organization_id")
-  comboName       String    @map("combo_name")
-  description     String
-  imageAlt        String    @map("image_alt")
-  abbreviation    String
-  packagingId     String    @map("packaging_id")
-  price           Decimal   @db.Decimal(10, 2)
-  active          Boolean   @default(true)
-  modalQuick      Boolean   @default(false) @map("modal_quick")
-  categoryId      String    @map("category_id")
-  slug            String
-  metaDescription String    @map("meta_description")
-  tags            String
-  uuid            String?   @unique @db.Uuid
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
-
-  // Relations
-  organization           Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  category               ProductComboCategory   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  packaging              Packaging              @relation(fields: [packagingId], references: [id], onDelete: Restrict)
-  comboProducts          ComboProduct[]
-  comboAllowedCategories ComboAllowedCategory[]
-  comboProductExcludes   ComboProductExclude[]
-
-  @@unique([organizationId, abbreviation])
-  @@index([organizationId])
-  @@index([organizationId, active])
-  @@index([slug])
-  @@index([deletedAt])
-  @@map("product_combos")
-}
-
-model ComboProduct {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  comboId        String   @map("combo_id")
-  productId      String   @map("product_id")
-  quantity       Int
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  combo        ProductCombo @relation(fields: [comboId], references: [id], onDelete: Cascade)
-  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
-  @@map("combo_products")
-}
-
-model StateStrategy {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  name           String
-  strategy       String
-  description    String
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  productRules ProductRule[]
-
-  @@index([organizationId])
-  @@map("state_strategies")
-}
-
-model ProductRule {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  name           String
-  strategyId     String   @map("strategy_id")
-  limit          Int?
-  exempt         Int?
-  alert          String?
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization           Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  strategy               StateStrategy          @relation(fields: [strategyId], references: [id], onDelete: Cascade)
-  comboAllowedCategories ComboAllowedCategory[]
-
-  @@index([organizationId])
-  @@map("product_rules")
-}
-
-model ComboAllowedCategory {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  comboId        String   @map("combo_id")
-  categoryId     String   @map("category_id")
-  ruleId         String?  @map("rule_id")
-  isRequired     Boolean  @default(false) @map("is_required")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  combo        ProductCombo     @relation(fields: [comboId], references: [id], onDelete: Cascade)
-  category     ProductCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  rule         ProductRule?     @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
-  @@map("combo_allowed_categories")
-}
-
-model ComboProductExclude {
-  id             String   @id @default(cuid())
-  organizationId String   @map("organization_id")
-  comboId        String   @map("combo_id")
-  productId      String   @map("product_id")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  combo        ProductCombo @relation(fields: [comboId], references: [id], onDelete: Cascade)
-  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId])
-  @@map("combo_product_excludes")
 }
