@@ -3,6 +3,10 @@ import { cuidSchema, emailSchema, phoneSchema } from "./common";
 
 // ===== ROLE AND PERMISSION SCHEMAS =====
 
+export const userRoleSchema = z.enum(["ADMIN", "USER", "DEV"], {
+  errorMap: () => ({ message: "Invalid user role" })
+});
+
 export const organizationRoleSchema = z.enum(["OWNER", "ADMIN", "MANAGER", "USER"], {
   errorMap: () => ({ message: "Invalid organization role" })
 });
@@ -10,14 +14,16 @@ export const organizationRoleSchema = z.enum(["OWNER", "ADMIN", "MANAGER", "USER
 export const permissionActionSchema = z.enum([
   "CREATE", "READ", "UPDATE", "DELETE", "RESTORE", "ARCHIVE",
   "MANAGE_USERS", "MANAGE_ROLES", "MANAGE_BILLING", "EXPORT_DATA",
-  "VIEW_ANALYTICS", "CONFIGURE_SETTINGS"
+  "VIEW_ANALYTICS", "CONFIGURE_SETTINGS", "IMPERSONATE", "VIEW_INTERNAL_DATA",
+  "MANAGE_STRIPE", "VIEW_LOGS", "DEBUG_SYSTEM"
 ], {
   errorMap: () => ({ message: "Invalid permission action" })
 });
 
 export const resourceTypeSchema = z.enum([
   "organization", "product", "combo", "category", "packaging", 
-  "stock", "user", "role", "billing", "settings", "analytics"
+  "stock", "user", "role", "billing", "settings", "analytics",
+  "internal_data", "stripe_data", "system_logs", "audit_logs"
 ], {
   errorMap: () => ({ message: "Invalid resource type" })
 });
@@ -293,6 +299,7 @@ export const tokenSchema = z.object({
 
 // ===== TYPE EXPORTS =====
 
+export type UserRole = z.infer<typeof userRoleSchema>;
 export type OrganizationRole = z.infer<typeof organizationRoleSchema>;
 export type PermissionAction = z.infer<typeof permissionActionSchema>;
 export type ResourceType = z.infer<typeof resourceTypeSchema>;

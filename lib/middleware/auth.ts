@@ -3,7 +3,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { organizationService } from "@/lib/services/organization.service";
-import type { OrganizationRole, PermissionAction, ResourceType } from "@/lib/validations/auth";
+import type { UserRole, OrganizationRole, PermissionAction, ResourceType } from "@/lib/validations/auth";
 
 // ===== PERMISSION DEFINITIONS =====
 
@@ -249,6 +249,76 @@ export class AuthorizationService {
   }
 }
 
+// ===== DEV ROLE SPECIAL PERMISSIONS =====
+
+/**
+ * Check if user has DEV role (system-wide permissions)
+ */
+export async function hasDevRole(userId: string): Promise<boolean> {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.id !== userId) {
+      return false;
+    }
+    return user.role === "DEV";
+  } catch (error) {
+    console.error("Error checking DEV role:", error);
+    return false;
+  }
+}
+
+/**
+ * Check if user can access internal system data
+ */
+export async function canAccessInternalData(userId: string): Promise<boolean> {
+  return await hasDevRole(userId);
+}
+
+/**
+ * Check if user can impersonate other users
+ */
+export async function canImpersonate(userId: string, targetUserId?: string): Promise<boolean> {
+  if (!(await hasDevRole(userId))) {
+    return false;
+  }
+  
+  // Prevent DEV from impersonating other DEV or ADMIN users
+  if (targetUserId) {
+    try {
+      const targetUser = await getCurrentUser();
+      if (targetUser && (targetUser.role === "DEV" || targetUser.role === "ADMIN")) {
+        return false;
+      }
+    } catch (error) {
+      console.error("Error checking target user role:", error);
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+/**
+ * Check if user can access Stripe data
+ */
+export async function canAccessStripeData(userId: string): Promise<boolean> {
+  return await hasDevRole(userId);
+}
+
+/**
+ * Check if user can view system logs
+ */
+export async function canViewSystemLogs(userId: string): Promise<boolean> {
+  return await hasDevRole(userId);
+}
+
+/**
+ * Check if user can debug system
+ */
+export async function canDebugSystem(userId: string): Promise<boolean> {
+  return await hasDevRole(userId);
+}
+
 // ===== AUTHORIZATION MIDDLEWARE =====
 
 export interface AuthMiddlewareOptions {
@@ -492,6 +562,11 @@ export function getPermissionDisplayName(action: PermissionAction, resource: Res
     EXPORT_DATA: "Exportar Datos",
     VIEW_ANALYTICS: "Ver Analíticas",
     CONFIGURE_SETTINGS: "Configurar Ajustes",
+    IMPERSONATE: "Suplantar Usuario",
+    VIEW_INTERNAL_DATA: "Ver Datos Internos",
+    MANAGE_STRIPE: "Gestionar Stripe",
+    VIEW_LOGS: "Ver Registros",
+    DEBUG_SYSTEM: "Depurar Sistema",
   };
   
   const resourceNames: Record<ResourceType, string> = {
@@ -506,6 +581,10 @@ export function getPermissionDisplayName(action: PermissionAction, resource: Res
     billing: "Facturación",
     settings: "Configuración",
     analytics: "Analíticas",
+    internal_data: "Datos Internos",
+    stripe_data: "Datos de Stripe",
+    system_logs: "Registros del Sistema",
+    audit_logs: "Registros de Auditoría",
   };
   
   return `${actionNames[action]} ${resourceNames[resource]}`;
