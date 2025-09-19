@@ -3,6 +3,7 @@ import { constructMetadata } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { EmptyPlaceholder } from "@/components/shared/empty-placeholder";
+import { redirect } from "next/navigation";
 
 export const metadata = constructMetadata({
   title: "Dashboard – Factufly Pro",
@@ -11,6 +12,8 @@ export const metadata = constructMetadata({
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
+  if (user?.role === "DEV") redirect("/admin/dev");
+
 
   return (
     <>

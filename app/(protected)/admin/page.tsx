@@ -7,13 +7,19 @@ import InfoCard from "@/components/dashboard/info-card";
 import TransactionsList from "@/components/dashboard/transactions-list";
 
 export const metadata = constructMetadata({
-  title: "Admin – Factufly Pro",
+  title: "Admin Panel – Factufly Pro",
   description: "Admin page for only admin management.",
 });
 
 export default async function AdminPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "ADMIN") redirect("/login");
+  if (!user) redirect("/login");
+  
+  // Redirect DEV users to /admin/dev
+  if (user.role === "DEV") redirect("/admin/dev");
+  
+  // Only ADMIN users can access this page
+  if (user.role !== "ADMIN") redirect("/login");
 
   return (
     <>
