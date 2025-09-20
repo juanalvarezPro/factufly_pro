@@ -1,6 +1,6 @@
 // Export all validation schemas and types
 export * from "./auth";
-export * from "./user";
+export { userNameSchema, userRoleSchema as userRoleUpdateSchema } from "./user";
 // Don't export all from organization to avoid conflicts with auth
 export * from "./product";
 export * from "./combo";
