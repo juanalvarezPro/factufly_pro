@@ -7,14 +7,14 @@ export const sidebarLinks: SidebarNavItem[] = [
     title: "PRINCIPAL",
     items: [
       { href: "/dashboard", icon: "dashboard", title: "Panel de Control" },
-      { href: "/dashboard/analytics", title: "Analíticas" },
-      { href: "/dashboard/reports", title: "Reportes" },
+      { href: "/dashboard/analytics", title: "Analíticas" , authorizeOnly: UserRole.ADMIN},
+      { href: "/dashboard/reports", title: "Reportes" , authorizeOnly: UserRole.ADMIN},
     ],
   },
   {
     title: "CATÁLOGO",
     items: [
-      { href: "/dashboard/categories", icon: "listCheck", title: "Categorías" },
+      { href: "/dashboard/categories", icon: "listCheck", title: "Categorías" , authorizeOnly: UserRole.ADMIN},
     ],
   },
   {
@@ -41,9 +41,9 @@ export const sidebarLinks: SidebarNavItem[] = [
   {
     title: "CONFIGURACIÓN",
     items: [
-      { href: "/dashboard/settings", icon: "settings", title: "Configuración" },
-      { href: "/dashboard/billing", title: "Facturación" },
-      { href: "/dashboard/integrations", title: "Integraciones" },
+      { href: "/dashboard/settings", icon: "settings", title: "Configuración" , authorizeOnly: UserRole.ADMIN},
+      { href: "/dashboard/billing", title: "Facturación" , authorizeOnly: UserRole.ADMIN},
+      { href: "/dashboard/integrations", title: "Integraciones" , authorizeOnly: UserRole.ADMIN},
       {
         href: "/admin",
         icon: "laptop",
@@ -55,9 +55,9 @@ export const sidebarLinks: SidebarNavItem[] = [
   {
     title: "AYUDA",
     items: [
-      { href: "/", icon: "home", title: "Página Principal" },
-      { href: "/docs", icon: "bookOpen", title: "Documentación" },
-      { href: "/dashboard/support",  title: "Soporte" },
+      { href: "/", icon: "home", title: "Página Principal"},
+      { href: "/docs", icon: "bookOpen", title: "Documentación" , authorizeOnly: UserRole.ADMIN},
+      { href: "/dashboard/support",  title: "Soporte" , authorizeOnly: UserRole.ADMIN},
     ],
   },
 ];
