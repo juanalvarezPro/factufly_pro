@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { User, UserRole } from "@prisma/client";
 import type { Icon } from "lucide-react";
 
 import { Icons } from "@/components/shared/icons";
@@ -25,6 +25,7 @@ export type NavItem = {
   disabled?: boolean;
   external?: boolean;
   authorizeOnly?: UserRole;
+  authorizeAny?: UserRole[];
   icon?: keyof typeof Icons;
 };
 
