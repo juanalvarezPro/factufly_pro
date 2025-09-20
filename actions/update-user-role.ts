@@ -19,7 +19,7 @@ export async function updateUserRole(userId: string, data: FormData) {
       throw new Error("Unauthorized");
     }
 
-    const { role } = userRoleSchema.parse(data);
+    const role = userRoleSchema.parse(data);
 
     // Special validation for DEV role assignment
     if (role === "DEV") {
